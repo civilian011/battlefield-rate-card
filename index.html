@@ -109,6 +109,23 @@ main { flex: 1; display: flex; min-height: 0; }
 .rate:hover { border-color: var(--line-2); }
 .rate:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgba(47,111,222,.15); }
 .rate.edited { background: var(--edit); border-color: var(--edit-line); }
+.rate.adjusted { background: #eaf1fd; border-color: #a9c3ee; }
+.drag { flex: none; width: 14px; height: 24px; display: grid; place-items: center; color: #a3a3aa; cursor: grab; margin-left: -4px; }
+.drag:hover { color: var(--ink); }
+.drag svg { width: 12px; height: 18px; }
+.mv { flex: none; width: 26px; height: 26px; border: 0; background: none; border-radius: 6px; color: var(--muted); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.mv:hover { background: var(--line); color: var(--ink); }
+.mv:disabled { opacity: .25; cursor: default; background: none; }
+.mv svg { width: 14px; height: 14px; }
+.sec.dragging { opacity: .4; }
+.sec.drop-before { box-shadow: 0 -3px 0 var(--red); }
+.sec.drop-after { box-shadow: 0 3px 0 var(--red); }
+.adj-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+.adj-grid .field { margin-bottom: 0; }
+.adj-grid input { text-align: right; }
+.rules .tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--muted); background: var(--soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
+.rules .acts { grid-row: 1 / 3; grid-column: 2; align-self: center; display: flex; gap: 4px; }
+.legend-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 3px 0 8px; border: 1px solid; }
 .rate.bad { border-color: #d33; background: #fff0f0; }
 .rate::placeholder { color: #c4c4ca; }
 .e-act { width: 24px; height: 24px; border: 0; background: none; border-radius: 6px; cursor: pointer; color: var(--muted); display: grid; place-items: center; padding: 0; visibility: hidden; }
@@ -170,6 +187,11 @@ main { flex: 1; display: flex; min-height: 0; }
 .blk { position: relative; }
 .rc .rm { position: absolute; left: -30pt; top: 50%; transform: translateY(-50%); width: 20pt; height: 20pt; border-radius: 50%; border: 0; background: #1c1c1e; color: #fff; font: 700 11pt/1 Arial, sans-serif; cursor: pointer; opacity: 0; transition: opacity .1s; display: grid; place-items: center; padding: 0; }
 .page .blk:hover > .rm { opacity: .85; }
+.rc .mvp { position: absolute; right: -27pt; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2pt; opacity: 0; transition: opacity .1s; }
+.page .blk:hover > .mvp { opacity: 1; }
+.rc .mvp button { width: 19pt; height: 13pt; border: 0; border-radius: 4pt; background: #1c1c1e; color: #fff; font: 700 7pt/1 Arial, sans-serif; cursor: pointer; padding: 0; }
+.rc .mvp button:hover { background: var(--red); }
+.rc .mvp button:disabled { opacity: .25; cursor: default; background: #1c1c1e; }
 .page .blk:hover > .rm:hover { opacity: 1; background: var(--red); }
 .page .blk.b-item:hover, .page .blk.b-note:hover, .page .blk.b-text:hover { background: #fff8d6; cursor: pointer; }
 .page .blk.b-item:hover .d, .page .blk.b-item:hover .n, .page .blk.b-item:hover .inq { background: transparent; }
@@ -272,7 +294,7 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
   #pages { zoom: 1 !important; width: auto; }
   .page { margin: 0; box-shadow: none; break-after: page; }
   .page:last-child { break-after: auto; }
-  .rc .rm { display: none !important; }
+  .rc .rm, .rc .mvp { display: none !important; }
   .page .blk:hover { background: none !important; }
 }
 </style>
@@ -359,6 +381,7 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
           <span id="eqCount"></span>
           <span class="spacer"></span>
           <button class="btn sm ghost" id="btnExpand">Expand all</button>
+          <button class="btn sm ghost" id="btnResetOrder" hidden title="Put the categories back in the standard order">Reset order</button>
           <button class="btn sm" id="btnAllOn">Include all</button>
           <button class="btn sm" id="btnAllOff">Remove all</button>
         </div>
@@ -374,19 +397,23 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
           <div class="inline" id="colChecks"></div>
         </fieldset>
         <fieldset class="fs">
-          <legend>Adjust rates</legend>
-          <p class="hint">Sets rates to the list price plus or minus a percentage, rounded to the dollar. Use a negative number for a discount. To change one rate, type in its box on the Equipment tab.</p>
+          <legend>Adjust rates by percentage</legend>
+          <p class="hint">Raise or discount the list price separately for each rate column. Use a negative number for a discount, e.g. -10. Enter 0 to keep the list price. Leave a box empty to use the broader adjustment, or the list price if there isn't one. Rates are rounded to the dollar.</p>
           <div class="card">
-            <div class="inline">
-              <input type="number" id="adjPct" step="0.5" value="-5" aria-label="Percent">
-              <span>% from list price, for</span>
-              <select id="adjScope" aria-label="Which items"></select>
-              <button class="btn sm primary" id="btnAdj">Apply</button>
+            <div class="field"><label for="adjScope">Apply to</label><select id="adjScope"></select></div>
+            <div class="adj-grid">
+              <div class="field"><label for="adj0">Daily %</label><input type="number" id="adj0" step="0.5" placeholder="not set"></div>
+              <div class="field"><label for="adj1">Weekly %</label><input type="number" id="adj1" step="0.5" placeholder="not set"></div>
+              <div class="field"><label for="adj2">4 Weeks %</label><input type="number" id="adj2" step="0.5" placeholder="not set"></div>
+              <button class="btn primary" id="btnAdj">Apply</button>
             </div>
           </div>
+          <div id="adjList"></div>
+          <p class="small muted">If adjustments overlap, the most specific one is used for each rate column: a product group's adjustment wins over its category's, and a category's wins over “All equipment”. Prices typed on the Equipment tab win over every adjustment.
+            On the Equipment tab, adjusted rates are <span class="legend-sw" style="background:#eaf1fd;border-color:#a9c3ee"></span>blue and typed prices are <span class="legend-sw" style="background:var(--edit);border-color:var(--edit-line)"></span>yellow.</p>
         </fieldset>
         <fieldset class="fs">
-          <legend>Rates changed from list price <span id="chgCount"></span></legend>
+          <legend>Prices typed by hand <span id="chgCount"></span></legend>
           <div id="chgWrap"></div>
         </fieldset>
       </div>
@@ -457,8 +484,8 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
   <div class="dlg-b">
     <ol class="steps">
       <li><b>Customer:</b> enter who the rate card is for and your contact details.</li>
-      <li><b>Equipment:</b> untick sections or individual items the customer doesn't need. You can also hover a line in the preview and press <b>×</b>. To change a price, type in its box. Changed prices turn yellow, and <b>↺</b> puts the list price back. Use <b>+ Add item</b> for equipment that isn't on the list.</li>
-      <li><b>Pricing:</b> choose which rate columns to show, or apply a percentage to many rates at once.</li>
+      <li><b>Equipment:</b> untick categories or individual items the customer doesn't need. You can also hover a line in the preview and press <b>×</b>. To put the most important categories first, drag a category by its handle (⋮⋮) or use its ▲ ▼ arrows. To change a price, type in its box. Typed prices turn yellow, and <b>↺</b> puts the price back. Use <b>+ Add item</b> for equipment that isn't on the list.</li>
+      <li><b>Pricing:</b> choose which rate columns to show, and raise or discount Daily, Weekly and 4 Weeks rates by different percentages for all equipment, a category or a product group.</li>
       <li><b>Save</b> keeps the rate card on this computer so you can reopen it later. <b>Save a copy to a file</b> (in the ••• menu) lets you keep it in OneDrive or send it to a colleague.</li>
       <li><b>Publish PDF</b> creates the PDF to send to your customer.</li>
     </ol>
@@ -576,8 +603,12 @@ const isContent = r => r.type !== 'sub' && r.type !== 'group';
 let ROW_INDEX = new Map();
 function indexData() {
   ROW_INDEX = new Map();
-  for (const s of DATA.sections) for (const r of s.rows) ROW_INDEX.set(r.id, { row: r, sec: s });
+  for (const s of DATA.sections) {
+    let sub = null;
+    for (const r of s.rows) { if (r.type === 'sub') sub = r; ROW_INDEX.set(r.id, { row: r, sec: s, sub: r.type === 'sub' ? null : sub }); }
+  }
 }
+const titleCase = s => String(s).toLowerCase().replace(/(^|[\s/(&-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
 
 /* ---------------- state ---------------- */
 let state, dirty = false;
@@ -590,6 +621,8 @@ function blankState(allOn = true) {
     date: todayISO(), validUntil: `${DATA.meta.year}-12-31`, notes: '',
     hiddenSections: allOn ? {} : Object.fromEntries(DATA.sections.map(s => [s.id, true])),
     hidden: {}, overrides: {}, custom: [], cols: [true, true, true], savedAt: null,
+    order: [],   // category ids in the rep's chosen order
+    adjust: [],  // { scope: '*' | 'sec:<id>' | 'sub:<id>', pct: [daily, weekly, 4 weeks] }
   };
 }
 function normalise(s) {
@@ -600,15 +633,62 @@ function normalise(s) {
   for (const k of ['hiddenSections', 'hidden', 'overrides']) if (!out[k] || typeof out[k] !== 'object') out[k] = {};
   if (!Array.isArray(out.custom)) out.custom = [];
   if (!Array.isArray(out.cols) || out.cols.length !== 3 || !out.cols.some(Boolean)) out.cols = [true, true, true];
+  if (!Array.isArray(out.order)) out.order = [];
+  if (!Array.isArray(out.adjust)) out.adjust = [];
   return out;
 }
 const rowOn = r => !state.hidden[r.id];
+
+// Categories in the rep's order; categories new to the rate data slot in after the one they follow.
+function orderedSections() {
+  const byId = new Map(DATA.sections.map(s => [s.id, s]));
+  const out = [...new Set(state.order)].filter(id => byId.has(id)).map(id => byId.get(id));
+  DATA.sections.forEach((s, i) => { if (!out.includes(s)) out.splice(i ? out.indexOf(DATA.sections[i - 1]) + 1 : 0, 0, s); });
+  return out;
+}
+const orderChanged = () => orderedSections().some((s, i) => s !== DATA.sections[i]);
+function moveSection(id, to) {
+  const ids = orderedSections().map(s => s.id), from = ids.indexOf(id);
+  if (from < 0 || to < 0 || to >= ids.length || to === from) return false;
+  ids.splice(from, 1); ids.splice(to, 0, id);
+  state.order = ids; return true;
+}
+
+// Percentage adjustments, per rate column: the most specific rule that sets that column
+// (product group, then category, then all equipment) applies to the list price. A blank column falls through.
+function ruleFor(r, i) {
+  if (r.custom || !state.adjust.length) return null;
+  const ix = ROW_INDEX.get(r.id); if (!ix) return null;
+  const scopes = [ix.sub && 'sub:' + ix.sub.id, 'sec:' + ix.sec.id, '*'].filter(Boolean);
+  for (const sc of scopes) { const a = state.adjust.find(x => x.scope === sc); if (a && a.pct[i] != null) return a; }
+  return null;
+}
+function autoRates(r) {
+  return r.rates.map((v, i) => { const a = v == null ? null : ruleFor(r, i); return a && a.pct[i] ? Math.round(v * (1 + a.pct[i] / 100)) : v; });
+}
 function rates(r) {
   if (r.custom) return r.rates;
-  const o = state.overrides[r.id];
-  return r.rates.map((v, i) => (o && i in o ? o[i] : v));
+  const o = state.overrides[r.id], a = autoRates(r);
+  return a.map((v, i) => (o && i in o ? o[i] : v));
 }
 const isEdited = (r, i) => !r.custom && !!state.overrides[r.id] && (i in state.overrides[r.id]);
+const isAdjusted = (r, i) => !r.custom && !isEdited(r, i) && !sameRate(autoRates(r)[i], r.rates[i]);
+function scopeLabel(scope) {
+  if (scope === '*') return 'All equipment';
+  const [kind, id] = [scope.slice(0, 3), scope.slice(4)];
+  if (kind === 'sec') { const s = DATA.sections.find(x => x.id === id); return s ? titleCase(s.name) : null; }
+  const ix = ROW_INDEX.get(id); return ix ? `${titleCase(ix.row.text)} (${titleCase(ix.sec.name)})` : null;
+}
+function scopeRows(scope) {
+  const out = [];
+  for (const s of DATA.sections) for (const r of s.rows) {
+    if (r.type !== 'item') continue;
+    const ix = ROW_INDEX.get(r.id);
+    if (scope === '*' || scope === 'sec:' + s.id || (ix.sub && scope === 'sub:' + ix.sub.id)) out.push(r);
+  }
+  return out;
+}
+const pctText = p => p.map((v, i) => `${COL_NAMES[i]} ${v == null ? 'not set' : v ? (v > 0 ? '+' : '') + v + '%' : 'list price'}`).join(' · ');
 
 // Rows of a section with the rep's custom items slotted in after their anchor rows.
 function sectionRows(sec) {
@@ -698,11 +778,11 @@ function buildBlocks() {
   if (hasCustomerBlock()) add('cust', customerHTML(), { gap: 2 });
   const heads = [0, 1, 2].filter(i => state.cols[i]).map(i => `<div class="h">${esc(L.columns[i])}</div>`).join('');
   let anyGreen = false, anySection = false;
-  for (const sec of DATA.sections) {
-    const vis = visibleRows(sec);
-    if (!vis.some(x => isContent(x.r))) continue;
+  const shownSecs = orderedSections().map(sec => ({ sec, vis: visibleRows(sec) })).filter(x => x.vis.some(y => isContent(y.r)));
+  shownSecs.forEach(({ sec, vis }, si) => {
     anySection = true;
-    add('sec', `<div>${esc(sec.name)}</div>${heads}${rmBtn('sec', sec.id)}`, { cls: 'cols', gap: 12.5, keep: 2, id: sec.id, sec: sec.id });
+    const mv = `<div class="mvp"><button data-mv="up" data-id="${esc(sec.id)}" title="Move this category up" ${si ? '' : 'disabled'}>▲</button><button data-mv="down" data-id="${esc(sec.id)}" title="Move this category down" ${si < shownSecs.length - 1 ? '' : 'disabled'}>▼</button></div>`;
+    add('sec', `<div>${esc(sec.name)}</div>${heads}${rmBtn('sec', sec.id)}${mv}`, { cls: 'cols', gap: 12.5, keep: 2, id: sec.id, sec: sec.id });
     for (const x of vis) {
       const r = x.r;
       if (r.type === 'sub') add('sub', `${esc(r.text)}${rmBtn('head', r.id)}`, { keep: 1, id: r.id, sec: sec.id });
@@ -716,7 +796,7 @@ function buildBlocks() {
       else if (r.type === 'text') add('text', esc(r.text) + rmBtn('row', r.id), { id: r.id, sec: sec.id });
       else if (r.type === 'image' && ASSETS[r.image]) add('image', `<img src="${ASSETS[r.image]}" alt="${esc(r.text || '')}">${rmBtn('row', r.id)}`, { id: r.id, sec: sec.id });
     }
-  }
+  });
   if (!anySection) return null;
   if (anyGreen) {
     const p = String(M.greenLeaf || '').replace(/<g>/g, '<span class="g">').replace(/<\/g>/g, '</span>');
@@ -816,7 +896,9 @@ function counts() {
     for (const r of sectionRows(sec)) if (r.type === 'item') { items++; if (!state.hiddenSections[sec.id] && rowOn(r)) on++; }
   }
   const secs = DATA.sections.filter(s => visibleRows(s).some(x => isContent(x.r))).length;
-  const edits = Object.values(state.overrides).reduce((n, o) => n + Object.keys(o).length, 0);
+  // items on the card whose rates differ from list price (typed or adjusted)
+  let edits = 0;
+  for (const sec of DATA.sections) for (const x of visibleRows(sec)) { const r = x.r; if (r.type === 'item' && !r.custom && rates(r).some((v, i) => !sameRate(v, r.rates[i]))) edits++; }
   return { items, on, secs, edits };
 }
 function updatePvInfo() {
@@ -830,6 +912,9 @@ const ICON = {
   chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
   reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  grip: '<svg viewBox="0 0 12 18" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
 };
 const openSecs = new Set();
 let rowEls = new Map();
@@ -837,7 +922,8 @@ function renderEditor() {
   const host = $('#secList');
   rowEls = new Map();
   let html = '';
-  for (const sec of DATA.sections) {
+  const secs = orderedSections();
+  for (const [si, sec] of secs.entries()) {
     const { info } = structure(sec);
     let body = `<div class="e-cols"><span></span><span style="text-align:left;padding:0">Description</span>${COL_NAMES.map((n, i) => `<span class="${state.cols[i] ? '' : 'off'}">${n}</span>`).join('')}<span></span></div>`;
     info.forEach((x, idx) => {
@@ -869,10 +955,12 @@ function renderEditor() {
       }
     });
     html += `<div class="sec${openSecs.has(sec.id) ? ' open' : ''}" data-sec="${esc(sec.id)}">
-      <div class="sec-head" data-act="toggle"><input type="checkbox" class="cb" data-act="sec" aria-label="Include ${esc(sec.name)}"><button class="sec-name" data-act="toggle" aria-expanded="${openSecs.has(sec.id)}">${esc(sec.name)}</button><span class="sec-count"></span>${ICON.chev}</div>
+      <div class="sec-head" data-act="toggle"><span class="drag" data-act="grip" title="Drag to change the order of categories">${ICON.grip}</span><input type="checkbox" class="cb" data-act="sec" aria-label="Include ${esc(sec.name)}"><button class="sec-name" data-act="toggle" aria-expanded="${openSecs.has(sec.id)}">${esc(sec.name)}</button><span class="sec-count"></span>
+        <button class="mv" data-act="up" title="Move up" aria-label="Move ${esc(sec.name)} up" ${si ? '' : 'disabled'}>${ICON.up}</button><button class="mv" data-act="down" title="Move down" aria-label="Move ${esc(sec.name)} down" ${si < secs.length - 1 ? '' : 'disabled'}>${ICON.down}</button>${ICON.chev}</div>
       <div class="sec-body">${body}</div></div>`;
   }
   host.innerHTML = html;
+  $('#btnResetOrder').hidden = !orderChanged();
   for (const el of $$('[data-id]', host)) rowEls.set(el.dataset.id, el);
   syncEditor();
   applySearch();
@@ -906,11 +994,13 @@ function syncEditor() {
         const vals = rates(r);
         let anyEdit = false;
         $$('.rate', rowEl).forEach(inp => {
-          const i = +inp.dataset.i, ed = isEdited(r, i);
+          const i = +inp.dataset.i, ed = isEdited(r, i), adj = isAdjusted(r, i), rule = adj && ruleFor(r, i);
           anyEdit = anyEdit || ed;
           inp.classList.toggle('edited', ed);
+          inp.classList.toggle('adjusted', adj);
           if (document.activeElement !== inp) { inp.value = fmt(vals[i]); inp.classList.remove('bad'); }
-          inp.title = ed ? `List price: ${r.rates[i] == null ? 'blank' : '$' + fmt(r.rates[i])}` : '';
+          const list = `List price: ${r.rates[i] == null ? 'blank' : '$' + fmt(r.rates[i])}`;
+          inp.title = ed ? `${list} · typed by hand` : adj ? `${list} · ${rule.pct[i] > 0 ? '+' : ''}${rule.pct[i]}% (${scopeLabel(rule.scope)})` : '';
         });
         const rb = rowEl.querySelector('[data-act="reset"]');
         if (rb) rb.classList.toggle('show', anyEdit);
@@ -953,11 +1043,15 @@ function onEditorClick(e) {
   if (!t) return;
   const act = t.dataset.act, secEl = t.closest('.sec'), sec = secEl && DATA.sections.find(s => s.id === secEl.dataset.sec);
   const rowEl = t.closest('[data-id]'), id = rowEl && rowEl.dataset.id;
+  if (act === 'grip') return;
   if (act === 'toggle') {
     if (e.target.classList.contains('cb')) return;
     const open = !secEl.classList.contains('open');
     secEl.classList.toggle('open', open); $('.sec-name', secEl).setAttribute('aria-expanded', open);
     open ? openSecs.add(sec.id) : openSecs.delete(sec.id);
+  } else if (act === 'up' || act === 'down') {
+    const ids = orderedSections().map(s => s.id);
+    if (moveSection(sec.id, ids.indexOf(sec.id) + (act === 'up' ? -1 : 1))) afterReorder(sec.id, act);
   } else if (act === 'reset') {
     delete state.overrides[id]; changed();
   } else if (act === 'delcustom') {
@@ -1011,12 +1105,55 @@ function onEditorInput(e) {
   if (r.custom) r.rates[i] = v;
   else {
     const o = state.overrides[r.id] || {};
-    if (sameRate(v, r.rates[i])) delete o[i]; else o[i] = v;
+    if (sameRate(v, autoRates(r)[i])) delete o[i]; else o[i] = v;
     if (Object.keys(o).length) state.overrides[r.id] = o; else delete state.overrides[r.id];
     t.classList.toggle('edited', isEdited(r, i));
     rowEl.querySelector('[data-act="reset"]')?.classList.toggle('show', !!state.overrides[r.id]);
   }
   changed({ noEditor: true });
+}
+// Re-draw the list after a category moves, keeping the moved category (and the focused arrow) in view.
+function afterReorder(id, focusAct) {
+  renderEditor(); changed({ noEditor: true });
+  const el = $(`.sec[data-sec="${CSS.escape(id)}"]`, $('#secList'));
+  if (!el) return;
+  el.scrollIntoView({ block: 'nearest' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  const btn = focusAct && el.querySelector(`.mv[data-act="${focusAct}"]`);
+  if (btn && !btn.disabled) btn.focus();
+}
+// Drag a category by its grip to reorder.
+let dragSec = null;
+function initDrag(list) {
+  const clear = () => $$('.drop-before, .drop-after', list).forEach(e => e.classList.remove('drop-before', 'drop-after'));
+  list.addEventListener('pointerdown', e => { const g = e.target.closest('.drag'); if (g) g.closest('.sec').draggable = true; });
+  list.addEventListener('dragstart', e => {
+    const s = e.target.closest && e.target.closest('.sec');
+    if (!s || !s.draggable) { e.preventDefault(); return; }
+    dragSec = s.dataset.sec; s.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragSec);
+  });
+  list.addEventListener('dragover', e => {
+    if (!dragSec) return;
+    const s = e.target.closest('.sec'); if (!s) return;
+    e.preventDefault(); clear();
+    if (s.dataset.sec === dragSec) return;
+    const r = s.getBoundingClientRect();
+    s.classList.add(e.clientY < r.top + Math.min(r.height, 46) / 2 ? 'drop-before' : 'drop-after');
+  });
+  list.addEventListener('drop', e => {
+    if (!dragSec) return;
+    e.preventDefault();
+    const s = e.target.closest('.sec'), moved = dragSec;
+    const before = s && s.classList.contains('drop-before');
+    clear(); dragSec = null;
+    if (!s || s.dataset.sec === moved) return;
+    const ids = orderedSections().map(x => x.id).filter(x => x !== moved);
+    let to = ids.indexOf(s.dataset.sec) + (before ? 0 : 1);
+    ids.splice(to, 0, moved); state.order = ids;
+    afterReorder(moved);
+  });
+  list.addEventListener('dragend', () => { clear(); dragSec = null; $$('.sec', list).forEach(s => { s.draggable = false; s.classList.remove('dragging'); }); });
 }
 function onEditorBlur(e) {
   const t = e.target;
@@ -1038,38 +1175,49 @@ function renderColChecks() {
   $('#colChecks').innerHTML = COL_NAMES.map((n, i) => `<label class="check"><input type="checkbox" data-col="${i}" ${state.cols[i] ? 'checked' : ''}> ${n}</label>`).join('<span style="width:14px"></span>');
 }
 function renderPricing() {
+  // "Apply to" list: all equipment, then each category (in the rep's order) with its product groups.
   const sel = $('#adjScope'), keep = sel.value;
-  sel.innerHTML = `<option value="*">all included items</option>` + DATA.sections.filter(s => visibleRows(s).length).map(s => `<option value="${esc(s.id)}">${esc(s.name.toLowerCase())}</option>`).join('');
-  if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+  let opts = `<option value="*">All equipment</option>`;
+  for (const s of orderedSections()) {
+    const subs = s.rows.filter(r => r.type === 'sub' && s.rows.some(x => x.type === 'item' && ROW_INDEX.get(x.id)?.sub === r));
+    opts += `<optgroup label="${esc(titleCase(s.name))}"><option value="sec:${esc(s.id)}">All ${esc(titleCase(s.name))}</option>${subs.map(r => `<option value="sub:${esc(r.id)}"> ${esc(titleCase(r.text))}</option>`).join('')}</optgroup>`;
+  }
+  sel.innerHTML = opts;
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : '*';
+  // active adjustments
+  const rules = state.adjust.filter(a => scopeLabel(a.scope));
+  $('#adjList').innerHTML = rules.length ? `<ul class="changes rules" style="margin:4px 0 10px">${rules.map(a => {
+    const kind = a.scope === '*' ? '' : a.scope.startsWith('sec:') ? 'Category' : 'Product group';
+    return `<li><div><div class="what">${esc(scopeLabel(a.scope))}${kind ? `<span class="tag">${kind}</span>` : ''}</div><div class="where">${scopeRows(a.scope).length} items</div></div>
+      <div class="acts"><button class="btn sm" data-rule-edit="${esc(a.scope)}">Edit</button><button class="btn sm ghost" data-rule-del="${esc(a.scope)}">Remove</button></div>
+      <div class="diff">${esc(pctText(a.pct))}</div></li>`; }).join('')}</ul>` : '';
+  // prices typed by hand
   const list = [];
-  for (const sec of DATA.sections) for (const r of sec.rows) if (state.overrides[r.id]) list.push({ r, sec });
+  for (const sec of orderedSections()) for (const r of sec.rows) if (state.overrides[r.id]) list.push({ r, sec });
   $('#chgCount').textContent = list.length ? `(${list.length})` : '';
-  if (!list.length) { $('#chgWrap').innerHTML = '<p class="small muted">No rates have been changed. Every rate is the list price.</p>'; return; }
+  if (!list.length) { $('#chgWrap').innerHTML = '<p class="small muted">None. To set one price, type in its box on the Equipment tab.</p>'; return; }
   const show = vals => vals.map(v => (v == null ? '—' : fmt(v))).join(' / ');
-  $('#chgWrap').innerHTML = `<ul class="changes">${list.map(({ r, sec }) => `<li><div><div class="what">${esc(r.text)}</div><div class="where">${esc(sec.name)}${state.hidden[r.id] || state.hiddenSections[sec.id] ? ' · not on this rate card' : ''}</div></div>
+  $('#chgWrap').innerHTML = `<ul class="changes">${list.map(({ r, sec }) => `<li><div><div class="what">${esc(r.text)}</div><div class="where">${esc(titleCase(sec.name))}${state.hidden[r.id] || state.hiddenSections[sec.id] ? ' · not on this rate card' : ''}</div></div>
     <button class="btn sm" data-reset="${esc(r.id)}">Reset</button>
     <div class="diff"><s>${show(r.rates)}</s> → <b>${show(rates(r))}</b></div></li>`).join('')}</ul>
-    <p style="margin-top:12px"><button class="btn sm" id="btnResetAll">Reset all rates to list price</button></p>`;
+    <p style="margin-top:12px"><button class="btn sm" id="btnResetAll">Reset all typed prices</button></p>`;
+}
+function loadRuleIntoForm() {
+  const a = state.adjust.find(x => x.scope === $('#adjScope').value);
+  [0, 1, 2].forEach(i => { $('#adj' + i).value = a && a.pct[i] != null ? a.pct[i] : ''; });
 }
 function applyAdjust() {
-  const pct = Number($('#adjPct').value);
-  if (!Number.isFinite(pct) || pct <= -100 || pct > 500) { toast('Enter a percentage between -99 and 500.', 'error'); return; }
   const scope = $('#adjScope').value;
-  let n = 0;
-  for (const sec of DATA.sections) {
-    if (scope !== '*' && sec.id !== scope) continue;
-    for (const x of visibleRows(sec)) {
-      const r = x.r;
-      if (r.type !== 'item' || r.custom || r.rates.every(v => v == null)) continue;
-      if (pct === 0) { delete state.overrides[r.id]; n++; continue; }
-      const o = {};
-      r.rates.forEach((v, i) => { if (v != null) { const nv = Math.round(v * (1 + pct / 100)); if (nv !== v) o[i] = nv; } });
-      if (Object.keys(o).length) state.overrides[r.id] = o; else delete state.overrides[r.id];
-      n++;
-    }
-  }
+  const raw = [0, 1, 2].map(i => $('#adj' + i).value.trim());
+  const pct = raw.map(v => (v === '' ? null : Math.round(Number(v) * 100) / 100));
+  if (pct.some(v => v != null && (!Number.isFinite(v) || v <= -100 || v > 500))) { toast('Enter percentages between -99 and 500.', 'error'); return; }
+  state.adjust = state.adjust.filter(a => a.scope !== scope);
+  const label = scopeLabel(scope), items = scopeRows(scope);
+  const typed = items.filter(r => state.overrides[r.id]).length;
+  if (pct.every(v => v == null)) { changed(); toast(`Removed the adjustment for ${label}.`); return; }
+  state.adjust.push({ scope, pct });
   changed();
-  toast(pct === 0 ? `Reset ${n} items to list price.` : `Set ${n} items to list price ${pct > 0 ? '+' : ''}${pct}%.`);
+  toast(`${pctText(pct)} for ${label}.${typed ? ` ${typed} item${typed === 1 ? ' has a' : 's have'} typed price${typed === 1 ? '' : 's'}, which stay${typed === 1 ? 's' : ''} as typed.` : ''}`);
 }
 
 /* ---------------- customer form ---------------- */
@@ -1139,7 +1287,7 @@ function openPublish() {
   if (!state.rep.name.trim()) warn.push('Your name isn’t entered on the Customer tab.');
   if (state.custom.some(x => !x.text.trim() && !state.hidden[x.id])) warn.push('A custom item has no description.');
   $('#pubWarn').innerHTML = warn.map(w => `<div class="warn">${esc(w)}</div>`).join('');
-  $('#pubSummary').innerHTML = [[pageCount, 'pages'], [c.secs, 'sections'], [c.on, 'items'], [c.edits, 'changed rates']].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+  $('#pubSummary').innerHTML = [[pageCount, 'pages'], [c.secs, 'sections'], [c.on, 'items'], [c.edits, 'items not at list price']].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
   $('#pubName').value = `${state.customer.company.trim() ? safeFile(state.customer.company) + ' - ' : ''}Battlefield ${DATA.meta.year} Rental Rates`;
   $('#dlgPublish').showModal();
 }
@@ -1296,6 +1444,8 @@ function init() {
   list.addEventListener('input', onEditorInput);
   list.addEventListener('focusout', onEditorBlur);
   list.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('.rate, .e-desc-in')) e.target.blur(); });
+  initDrag(list);
+  $('#btnResetOrder').addEventListener('click', () => { state.order = []; renderEditor(); changed({ noEditor: true }); toast('Categories are back in the standard order.'); });
   $('#search').addEventListener('input', applySearch);
   $('#btnExpand').addEventListener('click', () => {
     const allOpen = DATA.sections.every(s => openSecs.has(s.id));
@@ -1312,12 +1462,27 @@ function init() {
     renderEditor(); changed({ noEditor: true });
   });
   $('#btnAdj').addEventListener('click', applyAdjust);
+  $('#adjScope').addEventListener('change', loadRuleIntoForm);
+  $$('#adj0, #adj1, #adj2').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') applyAdjust(); }));
+  $('#adjList').addEventListener('click', e => {
+    const ed = e.target.closest('[data-rule-edit]'), del = e.target.closest('[data-rule-del]');
+    if (ed) { $('#adjScope').value = ed.dataset.ruleEdit; loadRuleIntoForm(); $('#adj0').focus(); }
+    if (del) { state.adjust = state.adjust.filter(a => a.scope !== del.dataset.ruleDel); changed(); if ($('#adjScope').value === del.dataset.ruleDel) loadRuleIntoForm(); }
+  });
   $('#chgWrap').addEventListener('click', e => {
     const b = e.target.closest('[data-reset]'); if (b) { delete state.overrides[b.dataset.reset]; changed(); }
-    if (e.target.id === 'btnResetAll') confirmBox('Reset all rates?', 'Every changed rate on this rate card goes back to the list price.', 'Reset all').then(ok => { if (ok) { state.overrides = {}; changed(); } });
+    if (e.target.id === 'btnResetAll') confirmBox('Reset all typed prices?', 'Every price typed by hand on this rate card is removed. Percentage adjustments stay as they are.', 'Reset all').then(ok => { if (ok) { state.overrides = {}; changed(); } });
   });
   // preview interactions
   $('#pages').addEventListener('click', e => {
+    const mv = e.target.closest('[data-mv]');
+    if (mv) {
+      // move past the neighbouring category that is on the card
+      const shown = orderedSections().filter(s => visibleRows(s).some(x => isContent(x.r))).map(s => s.id);
+      const k = shown.indexOf(mv.dataset.id), other = shown[k + (mv.dataset.mv === 'up' ? -1 : 1)];
+      if (other) { const ids = orderedSections().map(s => s.id); moveSection(mv.dataset.id, ids.indexOf(other)); renderEditor(); changed({ noEditor: true }); }
+      return;
+    }
     const rm = e.target.closest('.rm');
     if (rm) {
       const id = rm.dataset.id, kind = rm.dataset.rm;
