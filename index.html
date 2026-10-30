@@ -1362,7 +1362,7 @@ function library() { return store.get('cards', {}); }
 function saveToLibrary(quiet) {
   state.savedAt = new Date().toISOString();
   const lib = library(); lib[state.id] = state;
-  if (!store.set('cards', lib)) { toast('This browser blocked saving. Use “Save a copy to a file” in the ••• menu instead.', 'error'); return false; }
+  if (!store.set('cards', lib)) { if (!quiet) toast('This browser blocked saving. Use “Save a copy to a file” in the ••• menu instead.', 'error'); return false; }
   dirty = false; store.set('draft', state); store.set('dirty', false); updateDocBar();
   if (!quiet) toast(`Saved “${cardName()}” on this computer.`);
   return true;
@@ -1503,7 +1503,7 @@ function openSubmit() {
 function doSubmit() {
   const m = findManager($('#subTo').value); if (!m) return;
   state.approval = { status: 'submitted', fp: fingerprint(), to: m.email, toName: m.name, submittedAt: new Date().toISOString(), submittedBy: state.rep.name.trim() };
-  if (!saveToLibrary(true)) return;
+  saveToLibrary(true); // the downloaded file carries the submission, so go on even where the browser blocks saving
   const file = `${safeFile(cardName())} - for approval.json`, n = erpItems().length;
   download(file, fileJson(), 'application/json');
   const body = [`Hi ${m.name.split(' ')[0]},`, '',
