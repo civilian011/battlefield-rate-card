@@ -1,0 +1,1944 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Rate Card Builder - Battlefield Equipment Rentals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #af0e0e; --red-dk: #8f0b0b; --ink: #1c1c1e; --muted: #6b6b72; --line: #e2e2e6; --line-2: #d1d1d6;
+  --bg: #f3f3f5; --panel: #fff; --soft: #f6f6f8; --yellow: #ffcd11; --edit: #fff3bf; --edit-line: #e2b400;
+  --green: #008000; --focus: #2f6fde;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); display: flex; flex-direction: column; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+[hidden] { display: none !important; }
+.sandbox-bar { flex: none; padding: 9px 18px; background: #fff6e0; border-bottom: 1px solid #f0d48a; color: #6b4b00; font-size: 13px; }
+.sandbox-bar .u { font-weight: 700; user-select: all; }
+
+/* ---------- top bar ---------- */
+.topbar { flex: none; height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 18px; background: #fff; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand img { height: 38px; display: block; }
+.brand .app-name { font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; }
+.brand .app-sub { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.doc { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.doc-name { font-weight: 600; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.save-state { font-size: 12px; color: var(--muted); }
+.save-state.dirty { color: #a15c00; }
+.actions { display: flex; gap: 8px; align-items: center; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+.btn:hover { background: var(--soft); }
+.btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+.btn.primary:hover { background: var(--red-dk); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--soft); }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: 7px; }
+.btn.icon { width: 36px; padding: 0; justify-content: center; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn:disabled { opacity: .5; cursor: default; }
+.menu-wrap { position: relative; }
+.menu { position: absolute; right: 0; top: 42px; z-index: 50; min-width: 240px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 6px; display: none; }
+.menu.open { display: block; }
+.menu button { display: flex; width: 100%; text-align: left; gap: 10px; align-items: center; padding: 9px 10px; border: 0; background: none; border-radius: 6px; cursor: pointer; font-size: 13.5px; }
+.menu button:hover { background: var(--soft); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 4px; }
+
+/* ---------- approval strip ---------- */
+.flowbar { flex: none; display: flex; align-items: center; gap: 10px; padding: 7px 18px; background: #fafafb; border-bottom: 1px solid var(--line); font-size: 13px; }
+.flowbar .pill { flex: none; font-size: 11.5px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); border: 1px solid var(--line-2); white-space: nowrap; }
+.flowbar .pill.submitted { background: #eaf1fd; color: #1f4f9e; border-color: #a9c3ee; }
+.flowbar .pill.approved { background: #e6f4e6; color: #146c14; border-color: #9fd09f; }
+.flowbar .pill.changed, .flowbar .pill.declined { background: #fff6e0; color: #6b4b00; border-color: #f0d48a; }
+.flowbar .msg { flex: 1; min-width: 0; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flowbar .btns { flex: none; display: flex; gap: 8px; }
+.ok-box { background: #e6f4e6; border: 1px solid #9fd09f; color: #145214; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; }
+.err-box { background: #fff0f0; border: 1px solid #f0b4b4; color: #8a1010; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; }
+.rv-list { max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; margin: 0 0 14px; font-size: 12.5px; }
+.rv-list table { width: 100%; border-collapse: collapse; }
+.rv-list th, .rv-list td { padding: 6px 10px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rv-list th { border-top: 0; background: var(--soft); font-size: 11.5px; color: var(--muted); position: sticky; top: 0; }
+.rv-list th:first-child, .rv-list td:first-child { text-align: left; white-space: normal; }
+.rv-list s { color: var(--muted); margin-right: 4px; }
+.rv-meta { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 13px; margin-bottom: 12px; }
+.rv-meta dt { color: var(--muted); }
+.rv-meta dd { margin: 0; font-weight: 600; }
+
+/* ---------- layout ---------- */
+main { flex: 1; display: flex; min-height: 0; }
+.editor { flex: none; width: clamp(420px, 38vw, 560px); background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+.tabs { flex: none; display: flex; border-bottom: 1px solid var(--line); padding: 0 8px; }
+.tab { flex: 1; padding: 13px 8px 11px; border: 0; background: none; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; font-size: 13.5px; }
+.tab .num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--line); color: var(--muted); font-size: 11.5px; margin-right: 6px; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--red); }
+.tab[aria-selected="true"] .num { background: var(--red); color: #fff; }
+.panel { flex: 1; overflow: auto; display: none; }
+.panel.active { display: block; }
+.pad { padding: 18px 20px 28px; }
+
+/* ---------- forms ---------- */
+.fs { border: 0; padding: 0; margin: 0 0 22px; min-width: 0; } /* fieldsets otherwise refuse to shrink below their inputs */
+.fs legend { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 10px; padding: 0; }
+.fs .hint { font-size: 12.5px; color: var(--muted); margin: -4px 0 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.field label { font-size: 12.5px; font-weight: 600; }
+.field input, .field textarea, .field select { width: 100%; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 7px; background: #fff; }
+.field textarea { height: auto; min-height: 76px; padding: 8px 10px; resize: vertical; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgba(47,111,222,.15); }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--red); }
+
+/* ---------- equipment list ---------- */
+.eq-tools { position: sticky; top: 0; z-index: 5; background: #fff; padding: 14px 20px 10px; border-bottom: 1px solid var(--line); }
+.search { position: relative; }
+.search input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--line-2); border-radius: 8px; }
+.search svg { position: absolute; left: 11px; top: 10px; width: 16px; height: 16px; color: var(--muted); }
+.eq-row2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.eq-row2 .spacer { flex: 1; }
+.sec-list { padding: 8px 12px 40px; }
+.sec { border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; background: #fff; overflow: hidden; }
+.sec-head { display: flex; align-items: center; gap: 10px; padding: 0 10px 0 12px; height: 46px; cursor: pointer; user-select: none; }
+.sec-head:hover { background: var(--soft); }
+.sec-name { flex: 1; min-width: 0; font-weight: 700; font-size: 13px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: none; border: 0; text-align: left; padding: 0; cursor: pointer; }
+.sec.off .sec-name { color: var(--muted); }
+.sec-count { font-size: 12px; color: var(--muted); background: var(--soft); border-radius: 999px; padding: 2px 9px; font-variant-numeric: tabular-nums; }
+.chev { width: 18px; height: 18px; color: var(--muted); transition: transform .15s; }
+.sec.open .chev { transform: rotate(90deg); }
+.sec-body { display: none; border-top: 1px solid var(--line); padding: 4px 0 8px; }
+.sec.open .sec-body { display: block; }
+.cb { width: 17px; height: 17px; accent-color: var(--red); margin: 0; flex: none; cursor: pointer; }
+.e-cols, .e-item { display: grid; grid-template-columns: 22px minmax(0, 1fr) 66px 66px 66px 24px; gap: 6px; align-items: center; padding: 0 10px 0 12px; }
+.e-cols { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; height: 26px; }
+.e-cols span { text-align: right; padding-right: 7px; }
+.e-cols span.off { opacity: .35; text-decoration: line-through; }
+.e-item { min-height: 34px; font-size: 12.5px; }
+.e-item:hover { background: #fafafb; }
+.e-desc { line-height: 1.3; padding: 5px 0; }
+.e-desc .leaf { width: 12px; height: 12px; vertical-align: -1px; margin-left: 5px; }
+.e-item.green .e-desc { color: var(--green); font-weight: 600; }
+.e-item.indent .e-desc { padding-left: 16px; }
+.e-item.off .e-desc { color: #a3a3aa; text-decoration: line-through; }
+.e-item.off.green .e-desc { color: #9bc29b; }
+.e-item.off .rate { opacity: .45; }
+.rate { width: 100%; height: 28px; border: 1px solid var(--line); border-radius: 6px; text-align: right; padding: 0 7px; font-variant-numeric: tabular-nums; font-size: 12.5px; background: #fff; }
+.rate:hover { border-color: var(--line-2); }
+.rate:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgba(47,111,222,.15); }
+.rate.edited { background: var(--edit); border-color: var(--edit-line); }
+.rate.adjusted { background: #eaf1fd; border-color: #a9c3ee; }
+.drag { flex: none; width: 14px; height: 24px; display: grid; place-items: center; color: #a3a3aa; cursor: grab; margin-left: -4px; }
+.drag:hover { color: var(--ink); }
+.drag svg { width: 12px; height: 18px; }
+.mv { flex: none; width: 26px; height: 26px; border: 0; background: none; border-radius: 6px; color: var(--muted); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.mv:hover { background: var(--line); color: var(--ink); }
+.mv:disabled { opacity: .25; cursor: default; background: none; }
+.mv svg { width: 14px; height: 14px; }
+.sec.dragging { opacity: .4; }
+.sec.drop-before { box-shadow: 0 -3px 0 var(--red); }
+.sec.drop-after { box-shadow: 0 3px 0 var(--red); }
+.adj-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.adj-grid .field { margin-bottom: 0; }
+.adj-grid input { text-align: right; }
+.rules .tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--muted); background: var(--soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
+.rules .acts { grid-row: 1 / 3; grid-column: 2; align-self: center; display: flex; gap: 4px; }
+.legend-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 3px 0 8px; border: 1px solid; }
+.rate.bad { border-color: #d33; background: #fff0f0; }
+.rate::placeholder { color: #c4c4ca; }
+.e-act { width: 24px; height: 24px; border: 0; background: none; border-radius: 6px; cursor: pointer; color: var(--muted); display: grid; place-items: center; padding: 0; visibility: hidden; }
+.e-act svg { width: 15px; height: 15px; }
+.e-act:hover { background: var(--line); color: var(--ink); }
+.e-act.show { visibility: visible; }
+.e-inq { grid-column: 3 / 6; font-size: 11px; color: var(--muted); text-align: right; padding-right: 8px; margin-top: -6px; margin-bottom: 4px; }
+.e-sub { display: flex; align-items: center; gap: 10px; padding: 0 12px; height: 32px; margin: 6px 0 2px; background: #efeff2; font-weight: 700; font-size: 12px; letter-spacing: .02em; }
+.e-grp { display: flex; align-items: center; gap: 10px; padding: 0 12px; height: 30px; font-weight: 700; font-size: 12px; }
+.e-sub.off span, .e-grp.off span { color: #a3a3aa; }
+.e-note { display: grid; grid-template-columns: 22px 1fr; gap: 6px; align-items: start; padding: 6px 10px 6px 12px; font-size: 12px; }
+.e-note .cb { margin-top: 2px; }
+.e-note.note span { color: var(--red); font-weight: 600; }
+.e-note.text span { font-weight: 600; }
+.e-note.image img { max-width: 100%; height: 56px; object-fit: contain; object-position: left; display: block; }
+.e-note.off span, .e-note.off img { opacity: .4; text-decoration: line-through; }
+.e-add { display: block; margin: 4px 0 2px 40px; border: 0; background: none; color: var(--red); font-weight: 600; font-size: 12.5px; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.e-add:hover { background: #fbeaea; }
+.e-item.custom .e-desc input { width: 100%; height: 28px; border: 1px dashed var(--line-2); border-radius: 6px; padding: 0 7px; font-size: 12.5px; }
+.e-item.custom .tag { display: inline-block; font-size: 10px; font-weight: 700; color: #6a4bc4; background: #efeafd; border-radius: 4px; padding: 1px 5px; margin-top: 3px; }
+.e-item.custom .ck { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.e-item.custom .ck .tag { flex: none; margin-top: 0; }
+.e-item.custom .e-desc input.e-klass-in { flex: 1; min-width: 0; height: 24px; font-size: 11.5px; }
+.e-item.custom .e-desc input.e-klass-in.missing { border-color: #e0a100; background: #fffbea; }
+.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { background: #fff1a8; } 100% { background: transparent; } }
+.hidden-by-search { display: none !important; }
+.empty-search { padding: 30px 20px; color: var(--muted); text-align: center; display: none; }
+
+/* ---------- pricing tab ---------- */
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+.inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.inline input[type=number] { width: 90px; height: 36px; border: 1px solid var(--line-2); border-radius: 7px; padding: 0 10px; text-align: right; }
+.inline select { height: 36px; border: 1px solid var(--line-2); border-radius: 7px; padding: 0 8px; max-width: 260px; }
+.changes { list-style: none; margin: 0; padding: 0; }
+.changes li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.changes li:first-child { border-top: 0; }
+.changes .what { font-weight: 600; }
+.changes .where { color: var(--muted); font-size: 11.5px; }
+.changes .diff { grid-column: 1; font-variant-numeric: tabular-nums; }
+.changes .diff s { color: var(--muted); }
+.changes .diff b { color: #8a5a00; }
+.changes button { grid-row: 1 / 3; grid-column: 2; align-self: center; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+
+/* ---------- preview ---------- */
+.preview { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #e6e6ea; }
+.pv-bar { flex: none; height: 46px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: #f7f7f9; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.pv-bar .spacer { flex: 1; }
+.pv-bar b { color: var(--ink); }
+.zoom-val { width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
+.pv-scroll { flex: 1; overflow: auto; padding: 24px 24px 40px; }
+#pages { width: 8.5in; margin: 0 auto; zoom: var(--zoom, 1); }
+.page { width: 8.5in; height: 11in; background: #fff; position: relative; overflow: hidden; margin: 0 auto 22px; box-shadow: 0 1px 3px rgba(0,0,0,.14), 0 10px 30px rgba(0,0,0,.08); }
+.pv-empty { margin: 80px auto; max-width: 360px; text-align: center; color: var(--muted); }
+
+/* ---------- the rate card itself (print geometry in pt, matches the 2027 PDF) ---------- */
+.rc { font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; color: #000; font-size: 8.6pt; line-height: 12.7pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page-body { position: absolute; left: 56pt; top: 38pt; width: 499pt; }
+.page-foot { position: absolute; left: 0; right: 0; top: 758pt; text-align: center; font-size: 7pt; line-height: 9pt; color: #b3b3b3; }
+.page-foot b { font-weight: 700; }
+.blk { position: relative; }
+.rc .rm { position: absolute; left: -30pt; top: 50%; transform: translateY(-50%); width: 20pt; height: 20pt; border-radius: 50%; border: 0; background: #1c1c1e; color: #fff; font: 700 11pt/1 Arial, sans-serif; cursor: pointer; opacity: 0; transition: opacity .1s; display: grid; place-items: center; padding: 0; }
+.page .blk:hover > .rm { opacity: .85; }
+.rc .mvp { position: absolute; right: -27pt; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2pt; opacity: 0; transition: opacity .1s; }
+.page .blk:hover > .mvp { opacity: 1; }
+.rc .mvp button { width: 19pt; height: 13pt; border: 0; border-radius: 4pt; background: #1c1c1e; color: #fff; font: 700 7pt/1 Arial, sans-serif; cursor: pointer; padding: 0; }
+.rc .mvp button:hover { background: var(--red); }
+.rc .mvp button:disabled { opacity: .25; cursor: default; background: #1c1c1e; }
+.page .blk:hover > .rm:hover { opacity: 1; background: var(--red); }
+.page .blk.b-item:hover, .page .blk.b-note:hover, .page .blk.b-text:hover { background: #fff8d6; cursor: pointer; }
+.page .blk.b-item:hover .d, .page .blk.b-item:hover .n, .page .blk.b-item:hover .inq { background: transparent; }
+.b-mast { padding-bottom: 11pt; }
+.b-mast .logo { display: block; width: 220pt; height: 55pt; }
+.b-mast h1 { font-family: "Roboto Condensed", "Arial Narrow", "Helvetica Neue Condensed", Arial, sans-serif; font-stretch: condensed; font-weight: 700; font-size: 16.3pt; line-height: 18pt; margin: 6pt 0 0 2pt; white-space: nowrap; color: #000; }
+.cols { display: grid; grid-template-columns: 1fr var(--cols, 40pt 74pt 74pt); padding: 0 11pt 0 11.5pt; }
+.b-sec { background: #af0e0e; color: #fff; font-weight: 700; font-size: 10.3pt; height: 22pt; line-height: 22pt; }
+.b-sec .h { text-align: right; white-space: nowrap; }
+.b-item { min-height: 12.7pt; }
+.b-item .d { position: relative; padding-right: 6pt; }
+.b-item.green .d { color: #008000; font-weight: 700; }
+.b-item .leaf { position: absolute; left: 239pt; top: .6pt; width: 9pt; height: 11.3pt; }
+.b-item.indent .d { padding-left: 30pt; }
+.b-item .n { text-align: right; white-space: nowrap; }
+.b-item .inq { grid-column: 2 / -1; text-align: right; white-space: nowrap; }
+.b-sub { background: #d9d9d9; font-weight: 700; height: 15pt; line-height: 15pt; padding: 0 11pt 0 11.5pt; margin-top: .6pt; }
+.b-grp { font-weight: 700; padding: 1.6pt 11pt 0 11.5pt; line-height: 13pt; }
+.b-note { color: #af0e0e; font-weight: 700; padding: 0 11pt 0 11.5pt; }
+.b-text { font-weight: 700; padding: 1pt 60pt 1pt 11.5pt; }
+.b-image img { display: block; width: 432pt; margin: 3pt 0 3pt 8pt; }
+.b-cust { border-top: 2pt solid #af0e0e; background: #f2f2f2; padding: 7pt 11.5pt 7pt; font-size: 8.6pt; line-height: 11pt; }
+.b-cust .cg { display: grid; grid-template-columns: 1fr 1.45fr .8fr; gap: 12pt; }
+.b-cust .lbl { color: #af0e0e; font-weight: 700; font-size: 6.6pt; letter-spacing: .06em; line-height: 9pt; text-transform: uppercase; }
+.b-cust .lbl + .v { margin-bottom: 0; }
+.b-cust .v + .lbl { margin-top: 4pt; }
+.b-cust .v.big { font-weight: 700; font-size: 10pt; line-height: 12.5pt; }
+.b-cust .notes { margin-top: 6pt; padding-top: 6pt; border-top: .75pt solid #cfcfcf; white-space: pre-wrap; }
+.b-leafnote { display: grid; grid-template-columns: 34pt 1fr; align-items: center; padding: 2pt 0 0 14pt; }
+.b-leafnote img { width: 17.7pt; height: 22.3pt; }
+.b-leafnote p { margin: 0; font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif; font-size: 6.6pt; line-height: 7.9pt; text-align: center; }
+.b-leafnote .g { color: #008000; font-weight: 700; }
+.b-terms { display: grid; grid-template-columns: 167pt 200pt; gap: 0; justify-content: center; font-size: 6.5pt; line-height: 7.45pt; padding-top: 2pt; }
+.b-terms .tt { grid-column: 1 / -1; font-weight: 700; text-decoration: underline; }
+.b-terms .ind { padding-left: 31pt; }
+.b-contact { text-align: center; padding-top: 6pt; }
+.b-contact .logo { display: block; width: 220pt; height: 55pt; margin: 0 auto 16pt; }
+.b-contact .call { font-weight: 700; font-size: 10.3pt; line-height: 12.7pt; }
+.b-contact .map { font-weight: 700; font-size: 10.3pt; line-height: 12.7pt; color: #af0e0e; text-decoration: underline; }
+.b-contact .about { margin: 22pt auto 0; width: 450pt; line-height: 10pt; }
+.b-contact .social { position: relative; width: 193.8pt; height: 29.7pt; margin: 24pt auto 0; }
+.b-contact .social img { width: 100%; height: 100%; display: block; }
+.b-contact .social a { position: absolute; top: 0; bottom: 0; width: 20%; }
+.rc a { color: inherit; }
+.cat-logo { position: absolute; left: 223.2pt; width: 37.8pt; height: 21.5pt; pointer-events: none; }
+#measure { position: absolute; left: -20000px; top: 0; width: 499pt; visibility: hidden; }
+
+/* ---------- dialogs, toast ---------- */
+dialog { border: 0; border-radius: 14px; padding: 0; width: min(560px, calc(100vw - 32px)); box-shadow: 0 24px 64px rgba(0,0,0,.25); color: var(--ink); }
+dialog::backdrop { background: rgba(20,20,24,.45); }
+.dlg-h { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 0; }
+.dlg-h h2 { font-size: 18px; margin: 0; }
+.dlg-b { padding: 14px 22px 6px; }
+.dlg-f { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px 20px; }
+.dlg-b p { margin: 0 0 12px; }
+.steps { margin: 0 0 14px; padding-left: 20px; }
+.steps li { margin-bottom: 6px; }
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.summary div { background: var(--soft); border-radius: 8px; padding: 8px 10px; }
+.summary b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.summary span { font-size: 11.5px; color: var(--muted); }
+.warn { background: #fff6e0; border: 1px solid #f0d48a; color: #6b4b00; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; }
+.choice { display: block; width: 100%; text-align: left; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; }
+.choice:hover { border-color: var(--red); background: #fffafa; }
+.choice b { display: block; margin-bottom: 2px; }
+.choice span { color: var(--muted); font-size: 13px; }
+.lib { list-style: none; margin: 0 0 12px; padding: 0; max-height: 340px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.lib li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.lib li:first-child { border-top: 0; }
+.lib .meta { flex: 1; min-width: 0; }
+.lib .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib .meta span { font-size: 12px; color: var(--muted); }
+.lib-empty { padding: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+.admin-sec { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+.admin-sec h3 { font-size: 14px; margin: 0 0 8px; }
+.admin-out { font-size: 12.5px; background: var(--soft); border-radius: 8px; padding: 10px 12px; margin-top: 10px; display: none; white-space: pre-wrap; max-height: 180px; overflow: auto; }
+.admin-out.err { background: #fff0f0; color: #8a1010; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #1c1c1e; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: all .2s; z-index: 100; max-width: 90vw; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: #a01010; }
+
+@media (max-width: 1100px) {
+  main { flex-direction: column; overflow: auto; }
+  .editor { width: auto; border-right: 0; border-bottom: 1px solid var(--line); min-height: 70vh; }
+  .preview { min-height: 80vh; }
+  .brand .app-sub, .doc { display: none; }
+  .flowbar { flex-wrap: wrap; }
+  .flowbar .msg { white-space: normal; }
+}
+@media (max-width: 640px) {
+  .topbar { height: auto; flex-wrap: wrap; padding: 10px 16px; gap: 10px; }
+  .actions { flex-wrap: wrap; }
+  .btn .lbl-txt { display: none; }
+  .e-cols, .e-item { grid-template-columns: 22px minmax(0, 1fr) 56px 56px 56px 24px; gap: 4px; }
+}
+
+@page { size: letter; margin: 0; }
+@media print {
+  html, body { height: auto; background: #fff; display: block; }
+  .topbar, .flowbar, .editor, .pv-bar, dialog, #measure, .toast, .menu { display: none !important; }
+  main, .preview, .pv-scroll { display: block; overflow: visible; padding: 0; margin: 0; background: #fff; }
+  #pages { zoom: 1 !important; width: auto; }
+  .page { margin: 0; box-shadow: none; break-after: page; }
+  .page:last-child { break-after: auto; }
+  .rc .rm, .rc .mvp { display: none !important; }
+  .page .blk:hover { background: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img id="brandLogo" alt="Battlefield Equipment Rentals">
+    <div>
+      <div class="app-name">Rate Card Builder</div>
+      <div class="app-sub" id="appSub"></div>
+    </div>
+  </div>
+  <div class="doc">
+    <div class="doc-name" id="docName">Untitled rate card</div>
+    <div class="save-state" id="saveState"></div>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" id="btnNew" title="Start a new rate card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl-txt">New</span></button>
+    <button class="btn ghost" id="btnOpen" title="Open a saved rate card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl-txt">Open</span></button>
+    <button class="btn" id="btnSave" title="Save (Ctrl+S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8M7 21v-7h10v7"/></svg><span class="lbl-txt">Save</span></button>
+    <button class="btn" id="btnCsv" title="Download the customer's special pricing as a CSV for upload into MOAB"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl-txt">Export to CSV for MOAB</span></button>
+    <button class="btn primary" id="btnPublish" title="Create the PDF for your customer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3 3 3-3"/></svg><span class="lbl-txt">Publish PDF</span></button>
+    <div class="menu-wrap">
+      <button class="btn icon ghost" id="btnMenu" aria-label="More" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      <div class="menu" id="menu" role="menu">
+        <button data-menu="saveFile">Save a copy to a file…</button>
+        <button data-menu="openFile">Open a rate card file…</button>
+        <button data-menu="duplicate">Duplicate this rate card</button>
+        <hr data-approval hidden>
+        <button data-menu="submit" data-approval hidden>Submit for approval…</button>
+        <button data-menu="review" data-approval hidden>Review &amp; approve (sales manager)…</button>
+        <hr>
+        <button data-menu="help">How to use</button>
+        <button data-menu="admin">Update rates (admin)…</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="flowbar" id="flowbar" hidden>
+  <span class="pill" id="flowPill"></span>
+  <span class="msg" id="flowMsg"></span>
+  <span class="btns" id="flowBtns"></span>
+</div>
+
+<main>
+  <aside class="editor">
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="customer" aria-selected="false"><span class="num">1</span>Customer</button>
+      <button class="tab" role="tab" data-tab="equipment" aria-selected="true"><span class="num">2</span>Equipment</button>
+      <button class="tab" role="tab" data-tab="pricing" aria-selected="false"><span class="num">3</span>Pricing</button>
+    </nav>
+
+    <section class="panel" id="tab-customer" role="tabpanel">
+      <div class="pad">
+        <fieldset class="fs">
+          <legend>Prepared for</legend>
+          <div class="field"><label for="f-company">Customer / company name</label><input id="f-company" data-bind="customer.company" placeholder="e.g. Greenway Landscaping Ltd." autocomplete="off"></div>
+          <div class="field"><label for="f-number">Customer number <span class="muted" style="font-weight:400">(needed for the MOAB export; not shown on the PDF)</span></label><input id="f-number" data-bind="customer.number" placeholder="e.g. 104522" autocomplete="off"></div>
+          <div class="field"><label for="f-contact">Contact name</label><input id="f-contact" data-bind="customer.contact" placeholder="e.g. Jordan Lee" autocomplete="off"></div>
+        </fieldset>
+        <fieldset class="fs">
+          <legend>Prepared by</legend>
+          <p class="hint">Your details are remembered on this computer for your next rate card.</p>
+          <div class="grid2">
+            <div class="field"><label for="f-rep">Your name</label><input id="f-rep" data-bind="rep.name" autocomplete="name"></div>
+            <div class="field"><label for="f-title">Title</label><input id="f-title" data-bind="rep.title" placeholder="e.g. Territory Sales Representative"></div>
+            <div class="field"><label for="f-phone">Phone</label><input id="f-phone" data-bind="rep.phone" autocomplete="tel"></div>
+            <div class="field"><label for="f-email">Email</label><input id="f-email" data-bind="rep.email" autocomplete="email"></div>
+          </div>
+          <div class="field"><label for="f-branch">Branch</label><input id="f-branch" data-bind="rep.branch" placeholder="e.g. Stoney Creek"></div>
+        </fieldset>
+        <fieldset class="fs">
+          <legend>Dates</legend>
+          <div class="grid2">
+            <div class="field"><label for="f-date">Date</label><input id="f-date" type="date" data-bind="date"></div>
+            <div class="field"><label for="f-valid">Rates valid until</label><input id="f-valid" type="date" data-bind="validUntil"></div>
+          </div>
+        </fieldset>
+        <fieldset class="fs">
+          <legend>Notes for the customer</legend>
+          <div class="field"><label for="f-notes" class="muted" style="font-weight:400">Optional. Appears on page 1, e.g. special terms or delivery details.</label><textarea id="f-notes" data-bind="notes" rows="4"></textarea></div>
+        </fieldset>
+      </div>
+    </section>
+
+    <section class="panel active" id="tab-equipment" role="tabpanel">
+      <div class="eq-tools">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" type="search" placeholder="Search equipment, e.g. scissor, 4X4, auger">
+        </div>
+        <div class="eq-row2">
+          <span id="eqCount"></span>
+          <span class="spacer"></span>
+          <button class="btn sm ghost" id="btnExpand">Expand all</button>
+          <button class="btn sm ghost" id="btnResetOrder" hidden title="Put the categories back in the standard order">Reset order</button>
+          <button class="btn sm" id="btnAllOn">Include all</button>
+          <button class="btn sm" id="btnAllOff">Remove all</button>
+        </div>
+      </div>
+      <div class="sec-list" id="secList"></div>
+      <div class="empty-search" id="emptySearch">No equipment matches your search.</div>
+    </section>
+
+    <section class="panel" id="tab-pricing" role="tabpanel">
+      <div class="pad">
+        <fieldset class="fs">
+          <legend>Rate columns on the rate card</legend>
+          <div class="inline" id="colChecks"></div>
+        </fieldset>
+        <fieldset class="fs">
+          <legend>Adjust rates by percentage</legend>
+          <p class="hint">Raise or discount the list price separately for each rate column. Use a negative number for a discount, e.g. -10. Enter 0 to keep the list price. Leave a box empty to use the broader adjustment, or the list price if there isn't one. Rates are rounded to the dollar.</p>
+          <div class="card">
+            <div class="field"><label for="adjScope">Apply to</label><select id="adjScope"></select></div>
+            <div class="adj-grid">
+              <div class="field"><label for="adj0">Daily %</label><input type="number" id="adj0" step="0.5" placeholder="not set"></div>
+              <div class="field"><label for="adj1">Weekly %</label><input type="number" id="adj1" step="0.5" placeholder="not set"></div>
+              <div class="field"><label for="adj2">4 Weeks %</label><input type="number" id="adj2" step="0.5" placeholder="not set"></div>
+              <button class="btn primary" id="btnAdj">Apply</button>
+            </div>
+          </div>
+          <div id="adjList"></div>
+          <p class="small muted">If adjustments overlap, the most specific one is used for each rate column: a product group's adjustment wins over its category's, and a category's wins over “All equipment”. Prices typed on the Equipment tab win over every adjustment.
+            On the Equipment tab, adjusted rates are <span class="legend-sw" style="background:#eaf1fd;border-color:#a9c3ee"></span>blue and typed prices are <span class="legend-sw" style="background:var(--edit);border-color:var(--edit-line)"></span>yellow.</p>
+        </fieldset>
+        <fieldset class="fs">
+          <legend>Prices typed by hand <span id="chgCount"></span></legend>
+          <div id="chgWrap"></div>
+        </fieldset>
+      </div>
+    </section>
+  </aside>
+
+  <section class="preview" aria-label="Rate card preview">
+    <div class="pv-bar">
+      <span id="pvInfo"></span>
+      <span class="spacer"></span>
+      <span class="small">Click a line to find it. Hover and press × to remove it.</span>
+      <button class="btn sm ghost icon" id="zOut" aria-label="Zoom out">−</button>
+      <span class="zoom-val" id="zVal"></span>
+      <button class="btn sm ghost icon" id="zIn" aria-label="Zoom in">+</button>
+      <button class="btn sm ghost" id="zFit">Fit</button>
+    </div>
+    <div class="pv-scroll" id="pvScroll"><div id="pages"></div></div>
+  </section>
+</main>
+<div id="measure" class="rc"></div>
+<input type="file" id="fileOpen" accept=".json,application/json" hidden>
+<input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlgPublish">
+  <div class="dlg-h"><h2>Publish PDF</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <div id="pubWarn"></div>
+    <div class="summary" id="pubSummary"></div>
+    <div class="field"><label for="pubName">PDF file name</label><input id="pubName"></div>
+    <ol class="steps">
+      <li>Click <b>Continue</b>. Your browser's print window opens.</li>
+      <li>Set <b>Destination</b> (or Printer) to <b>Save as PDF</b> (in Edge or Chrome) or <b>Microsoft Print to PDF</b>.</li>
+      <li>Click <b>Save</b>, choose where to save it, and send the PDF to your customer.</li>
+    </ol>
+    <p class="small muted">Your rate card is saved automatically when you publish.</p>
+  </div>
+  <div class="dlg-f"><button class="btn" data-close>Cancel</button><button class="btn primary" id="pubGo">Continue</button></div>
+</dialog>
+
+<dialog id="dlgNew">
+  <div class="dlg-h"><h2>New rate card</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <div id="newWarn"></div>
+    <button class="choice" data-new="all"><b>Start with all equipment</b><span>Everything from the full rate card is included. Remove what the customer doesn't need.</span></button>
+    <button class="choice" data-new="none"><b>Start with nothing selected</b><span>Add only the sections and items the customer needs.</span></button>
+  </div>
+  <div class="dlg-f"><button class="btn" data-close>Cancel</button></div>
+</dialog>
+
+<dialog id="dlgOpen">
+  <div class="dlg-h"><h2>Open a rate card</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <p class="small muted">Rate cards saved on this computer:</p>
+    <ul class="lib" id="libList"></ul>
+  </div>
+  <div class="dlg-f"><button class="btn" id="openFromFile">Open from a file…</button><span style="flex:1"></span><button class="btn" data-close>Close</button></div>
+</dialog>
+
+<dialog id="dlgConfirm">
+  <div class="dlg-h"><h2 id="cfTitle"></h2></div>
+  <div class="dlg-b"><p id="cfText"></p></div>
+  <div class="dlg-f"><button class="btn" data-close>Cancel</button><button class="btn primary" id="cfOk">OK</button></div>
+</dialog>
+
+<dialog id="dlgSubmit">
+  <div class="dlg-h"><h2>Submit for approval</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <div id="subWarn"></div>
+    <div class="summary" id="subSummary"></div>
+    <div class="field"><label for="subTo">Sales manager</label><select id="subTo"></select></div>
+    <ol class="steps">
+      <li>Click <b>Submit</b>. A copy of this rate card is saved to your Downloads folder, and an email to your sales manager opens.</li>
+      <li><b>Attach the saved file</b> (<span id="subFile"></span>) to the email and send it.</li>
+      <li>When your manager approves it, they send the file back. Open it with <b>Open › Open from a file</b>, then use <b>Export CSV for ERP</b>.</li>
+    </ol>
+    <p class="small muted">If you change the rate card after submitting it, it needs to be submitted again.</p>
+  </div>
+  <div class="dlg-f"><button class="btn" data-close>Cancel</button><button class="btn primary" id="subGo">Submit</button></div>
+</dialog>
+
+<dialog id="dlgReview" style="width:min(680px, calc(100vw - 32px))">
+  <div class="dlg-h"><h2>Review rate card</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <div id="rvState"></div>
+    <dl class="rv-meta" id="rvMeta"></dl>
+    <div id="rvList"></div>
+    <div id="rvForm">
+      <div class="grid2">
+        <div class="field"><label for="rvWho">Sales manager</label><select id="rvWho"></select></div>
+        <div class="field"><label for="rvPin">Approval PIN</label><input id="rvPin" type="password" inputmode="numeric" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="rvNote">Note to the rep <span class="muted" style="font-weight:400">(needed if you decline)</span></label><textarea id="rvNote" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="dlg-f" id="rvFoot"></div>
+</dialog>
+
+<dialog id="dlgHelp">
+  <div class="dlg-h"><h2>How to use the Rate Card Builder</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <ol class="steps">
+      <li><b>Customer:</b> enter who the rate card is for and your contact details.</li>
+      <li><b>Equipment:</b> untick categories or individual items the customer doesn't need. You can also hover a line in the preview and press <b>×</b>. To put the most important categories first, drag a category by its handle (⋮⋮) or use its ▲ ▼ arrows. To change a price, type in its box. Typed prices turn yellow, and <b>↺</b> puts the price back. Use <b>+ Add item</b> for equipment that isn't on the list.</li>
+      <li><b>Pricing:</b> choose which rate columns to show, and raise or discount Daily, Weekly and 4 Weeks rates by different percentages for all equipment, a category or a product group.</li>
+      <li><b>Save</b> keeps the rate card on this computer so you can reopen it later. <b>Save a copy to a file</b> (in the ••• menu) lets you keep it in OneDrive or send it to a colleague.</li>
+      <li><b>Publish PDF</b> creates the PDF to send to your customer.</li>
+      <li><b>Export to CSV for MOAB</b> downloads the customer's special pricing for upload into MOAB: every item whose price differs from the list price, plus your custom items. Enter the <b>Customer number</b> on the Customer tab first, and a Klass code for each custom item.</li>
+    </ol>
+    <p class="small muted" id="helpVersion"></p>
+  </div>
+  <div class="dlg-f"><button class="btn primary" data-close>Got it</button></div>
+</dialog>
+
+<dialog id="dlgAdmin" style="width:min(680px, calc(100vw - 32px))">
+  <div class="dlg-h"><h2>Update rates (admin)</h2><button class="btn icon ghost" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-b">
+    <p class="small" id="admCurrent"></p>
+    <div class="admin-sec">
+      <h3>1. Download the rates spreadsheet</h3>
+      <p class="small muted">Opens in Excel. Each row is one line of the rate card. Change prices and descriptions, or add, delete and reorder rows. Keep the <b>ID</b> column as it is, and leave it blank for new rows. <b>Klass</b> holds the ERP Klass code(s) of an item, separated by commas. <b>Type</b> is one of SECTION, SUB (grey bar), GROUP (bold label), ITEM, NOTE (red text), TEXT (black text) or IMAGE. Leave all three rate cells blank to show “PLEASE INQUIRE”.</p>
+      <button class="btn sm" id="admCsvOut">Download rates (CSV)</button>
+    </div>
+    <div class="admin-sec">
+      <h3>2. Upload your edited spreadsheet</h3>
+      <p class="small muted">In Excel, use <b>File › Save As › CSV UTF-8 (Comma delimited)</b>. Uploading updates this window so you can check the preview first.</p>
+      <button class="btn sm" id="admCsvIn">Upload edited CSV…</button>
+      <div class="admin-out" id="admOut"></div>
+    </div>
+    <div class="admin-sec">
+      <h3>3. Card text</h3>
+      <div class="grid2">
+        <div class="field"><label for="admTitle">Title on page 1</label><input id="admTitle"></div>
+        <div class="field"><label for="admFooter">Page footer</label><input id="admFooter"></div>
+        <div class="field"><label for="admVersion">Rates version</label><input id="admVersion"></div>
+        <div class="field"><label for="admYear">Rate year</label><input id="admYear" type="number"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="admTermsL">Terms &amp; Conditions, left column (one per line)</label><textarea id="admTermsL" rows="7"></textarea></div>
+        <div class="field"><label for="admTermsR">Right column (start a line with two spaces to indent it)</label><textarea id="admTermsR" rows="7"></textarea></div>
+      </div>
+      <button class="btn sm" id="admApplyText">Apply text changes</button>
+    </div>
+    <div class="admin-sec">
+      <h3>Sales managers who approve rate cards</h3>
+      <div class="field"><label for="admManagers" class="muted" style="font-weight:400">One per line: <b>Name, email, PIN</b>. Leave the PIN off to keep a manager's current PIN. Changes take effect when you download the updated app (step 4).</label><textarea id="admManagers" rows="4"></textarea></div>
+    </div>
+    <div class="admin-sec">
+      <h3>4. Publish the updated app</h3>
+      <p class="small muted">Downloads a new copy of this app with the updated rates built in. Replace the copy on SharePoint with it. Rate cards that reps already saved still open and keep their own price changes.</p>
+      <button class="btn sm primary" id="admBuild">Download updated app</button>
+    </div>
+  </div>
+  <div class="dlg-f"><button class="btn" data-close>Close</button></div>
+</dialog>
+
+<script id="rate-data" type="application/json">{"__DATA__":1}</script>
+<script>
+'use strict';
+// Snapshot the untouched page source first, so the admin tool can rebuild this file with new rates.
+let PAGE_SOURCE = null;
+document.addEventListener('DOMContentLoaded', () => { PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }, { once: true });
+
+const ASSETS = /*__ASSETS__*/{};
+let DATA = JSON.parse(document.getElementById('rate-data').textContent);
+const PT = 96 / 72;
+const PAGE_CONTENT_H = 697; // pt between top margin and footer
+const LABEL_DEFAULTS = { columns: ['DAILY', 'WEEKLY', '4 WEEKS'], inquire: 'PLEASE INQUIRE', page: 'Page {n} of {t}', preparedFor: 'Prepared for', preparedBy: 'Prepared by', date: 'Date', validUntil: 'Rates valid until', notes: 'Notes', attn: 'Attn:' };
+const COL_NAMES = ['Daily', 'Weekly', '4 Weeks'];
+const ERP_FREQ = ['daily', 'weekly', 'twenty_eight_days'];
+// Sales-manager approval before the MOAB export. Switched off for now (Nov 2026); set to true to bring it back.
+const APPROVAL_ON = false;
+// SharePoint's HTML viewer runs the page in a frame sandboxed to scripts only: printing, downloads and saving are silently blocked.
+const SANDBOXED = (() => { try { return window.self !== window.top && window.origin === 'null'; } catch (e) { return true; } })();
+function sandboxStop(what) {
+  if (!SANDBOXED) return false;
+  confirmBox(`${what} doesn't work in SharePoint's viewer`, `SharePoint opens this page in a locked-down frame that blocks printing, downloads and saving. Open the Rate Card Builder at ${APP_URL} instead. Ask your manager if you need the link.`, 'OK');
+  return true;
+}
+const APP_URL = 'https://civilian011.github.io/battlefield-rate-card/';
+
+/* ---------------- utilities ---------------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clone = o => JSON.parse(JSON.stringify(o));
+function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+function fmt(n) {
+  if (n == null || n === '') return '';
+  return Number.isInteger(n) ? n.toLocaleString('en-CA') : n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function parseRate(s) {
+  const t = String(s ?? '').replace(/[$,\s]/g, '');
+  if (t === '') return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : undefined;
+}
+const sameRate = (a, b) => (a ?? null) === (b ?? null);
+const store = {
+  key: k => 'ber-ratecard:v1:' + k,
+  get(k, d) { try { const v = localStorage.getItem(this.key(k)); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(this.key(k), JSON.stringify(v)); return true; } catch (e) { return false; } },
+};
+function download(name, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+const safeFile = s => String(s).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Rate card';
+let toastTimer;
+function toast(msg, kind) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (kind ? ' ' + kind : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), kind === 'error' ? 6000 : 2600);
+}
+function confirmBox(title, text, okLabel = 'OK') {
+  return new Promise(res => {
+    const d = $('#dlgConfirm'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfOk').textContent = okLabel;
+    const done = v => { d.close(); $('#cfOk').onclick = null; d.onclose = null; res(v); };
+    $('#cfOk').onclick = () => done(true);
+    d.onclose = () => res(false);
+    d.showModal();
+  });
+}
+const labels = () => Object.assign({}, LABEL_DEFAULTS, DATA.meta.labels || {});
+function mailto(to, subject, body) {
+  const a = Object.assign(document.createElement('a'), { href: `mailto:${encodeURIComponent(to || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` });
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// SHA-256 (sync, so it also works when the app is opened from a file).
+const SHA = (() => {
+  const k = [], h = [], frac = x => (x - Math.floor(x)) * 0x100000000 | 0;
+  for (let n = 2; k.length < 64; n++) {
+    let prime = true; for (let d = 2; d * d <= n; d++) if (n % d === 0) { prime = false; break; }
+    if (prime) { if (h.length < 8) h.push(frac(Math.sqrt(n))); k.push(frac(Math.cbrt(n))); }
+  }
+  return { k, h };
+})();
+function sha256(str) {
+  const bytes = new TextEncoder().encode(str), len = bytes.length;
+  const n = ((len + 8) >> 6 << 4) + 16, w = new Int32Array(n), W = new Int32Array(64), H = SHA.h.slice(), K = SHA.k;
+  for (let i = 0; i < len; i++) w[i >> 2] |= bytes[i] << (24 - (i & 3) * 8);
+  w[len >> 2] |= 0x80 << (24 - (len & 3) * 8);
+  w[n - 1] = len * 8;
+  const ror = (x, r) => (x >>> r) | (x << (32 - r));
+  for (let j = 0; j < n; j += 16) {
+    for (let t = 0; t < 64; t++) {
+      if (t < 16) W[t] = w[j + t];
+      else { const a = W[t - 15], b = W[t - 2]; W[t] = (ror(a, 7) ^ ror(a, 18) ^ (a >>> 3)) + (ror(b, 17) ^ ror(b, 19) ^ (b >>> 10)) + W[t - 16] + W[t - 7]; }
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const t1 = h + (ror(e, 6) ^ ror(e, 11) ^ ror(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + W[t] | 0;
+      const t2 = (ror(a, 2) ^ ror(a, 13) ^ ror(a, 22)) + ((a & b) ^ (a & c) ^ (b & c)) | 0;
+      h = g; g = f; f = e; e = d + t1 | 0; d = c; c = b; b = a; a = t1 + t2 | 0;
+    }
+    [a, b, c, d, e, f, g, h].forEach((v, i) => { H[i] = H[i] + v | 0; });
+  }
+  return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+// JSON with sorted keys, so the same rate card always gives the same fingerprint.
+const canon = v => Array.isArray(v) ? `[${v.map(canon).join(',')}]`
+  : v && typeof v === 'object' ? `{${Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',')}}`
+  : JSON.stringify(v ?? null);
+
+/* ---------------- data index ---------------- */
+const isContent = r => r.type !== 'sub' && r.type !== 'group';
+let ROW_INDEX = new Map();
+function indexData() {
+  ROW_INDEX = new Map();
+  for (const s of DATA.sections) {
+    let sub = null;
+    for (const r of s.rows) { if (r.type === 'sub') sub = r; ROW_INDEX.set(r.id, { row: r, sec: s, sub: r.type === 'sub' ? null : sub }); }
+  }
+}
+const titleCase = s => String(s).toLowerCase().replace(/(^|[\s/(&-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+
+/* ---------------- state ---------------- */
+let state, dirty = false;
+function blankState(allOn = true) {
+  const me = store.get('me', {});
+  return {
+    v: 1, id: uid(), dataVersion: DATA.meta.version,
+    customer: { company: '', number: '', contact: '' },
+    rep: { name: me.name || '', title: me.title || '', phone: me.phone || '', email: me.email || '', branch: me.branch || '' },
+    date: todayISO(), validUntil: `${DATA.meta.year}-12-31`, notes: '',
+    hiddenSections: allOn ? {} : Object.fromEntries(DATA.sections.map(s => [s.id, true])),
+    hidden: {}, overrides: {}, custom: [], cols: [true, true, true], savedAt: null,
+    order: [],   // category ids in the rep's chosen order
+    adjust: [],  // { scope: '*' | 'sec:<id>' | 'sub:<id>', pct: [daily, weekly, 4 weeks] }
+    approval: null, // { status: 'submitted' | 'approved' | 'declined', fp, to, toName, submittedAt, submittedBy, by, byEmail, at, code, note }
+  };
+}
+function normalise(s) {
+  const b = blankState();
+  const out = Object.assign(b, s);
+  out.customer = Object.assign({ company: '', number: '', contact: '' }, s.customer);
+  out.rep = Object.assign(b.rep, s.rep);
+  for (const k of ['hiddenSections', 'hidden', 'overrides']) if (!out[k] || typeof out[k] !== 'object') out[k] = {};
+  if (!Array.isArray(out.custom)) out.custom = [];
+  if (!Array.isArray(out.cols) || out.cols.length !== 3 || !out.cols.some(Boolean)) out.cols = [true, true, true];
+  if (!Array.isArray(out.order)) out.order = [];
+  if (!Array.isArray(out.adjust)) out.adjust = [];
+  if (!out.approval || typeof out.approval !== 'object') out.approval = null;
+  delete out.app;
+  return out;
+}
+const rowOn = r => !state.hidden[r.id];
+
+// Categories in the rep's order; categories new to the rate data slot in after the one they follow.
+function orderedSections() {
+  const byId = new Map(DATA.sections.map(s => [s.id, s]));
+  const out = [...new Set(state.order)].filter(id => byId.has(id)).map(id => byId.get(id));
+  DATA.sections.forEach((s, i) => { if (!out.includes(s)) out.splice(i ? out.indexOf(DATA.sections[i - 1]) + 1 : 0, 0, s); });
+  return out;
+}
+const orderChanged = () => orderedSections().some((s, i) => s !== DATA.sections[i]);
+function moveSection(id, to) {
+  const ids = orderedSections().map(s => s.id), from = ids.indexOf(id);
+  if (from < 0 || to < 0 || to >= ids.length || to === from) return false;
+  ids.splice(from, 1); ids.splice(to, 0, id);
+  state.order = ids; return true;
+}
+
+// Percentage adjustments, per rate column: the most specific rule that sets that column
+// (product group, then category, then all equipment) applies to the list price. A blank column falls through.
+function ruleFor(r, i) {
+  if (r.custom || !state.adjust.length) return null;
+  const ix = ROW_INDEX.get(r.id); if (!ix) return null;
+  const scopes = [ix.sub && 'sub:' + ix.sub.id, 'sec:' + ix.sec.id, '*'].filter(Boolean);
+  for (const sc of scopes) { const a = state.adjust.find(x => x.scope === sc); if (a && a.pct[i] != null) return a; }
+  return null;
+}
+function autoRates(r) {
+  return r.rates.map((v, i) => { const a = v == null ? null : ruleFor(r, i); return a && a.pct[i] ? Math.round(v * (1 + a.pct[i] / 100)) : v; });
+}
+function rates(r) {
+  if (r.custom) return r.rates;
+  const o = state.overrides[r.id], a = autoRates(r);
+  return a.map((v, i) => (o && i in o ? o[i] : v));
+}
+const isEdited = (r, i) => !r.custom && !!state.overrides[r.id] && (i in state.overrides[r.id]);
+const isAdjusted = (r, i) => !r.custom && !isEdited(r, i) && !sameRate(autoRates(r)[i], r.rates[i]);
+function scopeLabel(scope) {
+  if (scope === '*') return 'All equipment';
+  const [kind, id] = [scope.slice(0, 3), scope.slice(4)];
+  if (kind === 'sec') { const s = DATA.sections.find(x => x.id === id); return s ? titleCase(s.name) : null; }
+  const ix = ROW_INDEX.get(id); return ix ? `${titleCase(ix.row.text)} (${titleCase(ix.sec.name)})` : null;
+}
+function scopeRows(scope) {
+  const out = [];
+  for (const s of DATA.sections) for (const r of s.rows) {
+    if (r.type !== 'item') continue;
+    const ix = ROW_INDEX.get(r.id);
+    if (scope === '*' || scope === 'sec:' + s.id || (ix.sub && scope === 'sub:' + ix.sub.id)) out.push(r);
+  }
+  return out;
+}
+const pctText = p => p.map((v, i) => `${COL_NAMES[i]} ${v == null ? 'not set' : v ? (v > 0 ? '+' : '') + v + '%' : 'list price'}`).join(' · ');
+
+// Rows of a section with the rep's custom items slotted in after their anchor rows.
+function sectionRows(sec) {
+  const customs = state.custom.filter(c => c.sec === sec.id);
+  if (!customs.length) return sec.rows;
+  const out = [], placed = new Set();
+  const after = id => { for (const c of customs) if (c.after === id && !placed.has(c.id)) { placed.add(c.id); out.push(c); after(c.id); } };
+  for (const r of sec.rows) { out.push(r); after(r.id); }
+  for (const c of customs) if (!placed.has(c.id)) { placed.add(c.id); out.push(c); after(c.id); }
+  return out;
+}
+// Each row annotated with the grey sub-heading and bold group label it falls under; heading -> content rows.
+function structure(sec) {
+  const rows = sectionRows(sec);
+  const ranges = new Map();
+  let sub = null, grp = null;
+  const info = rows.map(r => {
+    if (r.type === 'sub') { sub = r; grp = null; ranges.set(r.id, []); return { r, sub: null, grp: null }; }
+    if (r.type === 'group') { grp = r; ranges.set(r.id, []); return { r, sub, grp: null }; }
+    if (sub) ranges.get(sub.id).push(r);
+    if (grp) ranges.get(grp.id).push(r);
+    return { r, sub, grp };
+  });
+  return { rows, info, ranges };
+}
+function visibleRows(sec) {
+  if (state.hiddenSections[sec.id]) return [];
+  const { info, ranges } = structure(sec);
+  return info.filter(x => isContent(x.r) ? rowOn(x.r) : ranges.get(x.r.id).some(rowOn));
+}
+
+/* ---------------- change tracking & autosave ---------------- */
+let draftTimer;
+function changed(opts = {}) {
+  dirty = true;
+  updateDocBar();
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => { store.set('draft', state); store.set('dirty', dirty); }, 250);
+  if (!opts.noEditor) syncEditor();
+  if (!opts.noPricing) renderPricing();
+  renderFlow();
+  scheduleRender();
+}
+function cardName() { return state.customer.company.trim() || 'Untitled rate card'; }
+function updateDocBar() {
+  $('#docName').textContent = cardName();
+  const s = $('#saveState');
+  if (dirty) { s.textContent = state.savedAt ? 'Unsaved changes' : 'Not saved yet'; s.classList.add('dirty'); }
+  else { s.textContent = state.savedAt ? 'Saved ' + new Date(state.savedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' }) : ''; s.classList.remove('dirty'); }
+}
+
+/* ---------------- the rate card (preview + print) ---------------- */
+let renderQueued = false;
+function scheduleRender() { if (!renderQueued) { renderQueued = true; setTimeout(() => { renderQueued = false; renderCard(); }, 16); } }
+function colTemplate() { const n = state.cols.filter(Boolean).length; return ['40pt', ...Array(Math.max(0, n - 1)).fill('74pt')].join(' '); }
+const rmBtn = (kind, id) => `<button class="rm" data-rm="${kind}" data-id="${esc(id)}" title="Remove from this rate card" aria-label="Remove">×</button>`;
+
+function hasCustomerBlock() {
+  const c = state.customer, r = state.rep;
+  return !!(c.company || c.contact || r.name || r.phone || r.email || r.branch || state.notes);
+}
+function customerHTML() {
+  const L = labels(), c = state.customer, r = state.rep;
+  const col1 = c.company || c.contact ? `<div><div class="lbl">${esc(L.preparedFor)}</div>${c.company ? `<div class="v big">${esc(c.company)}</div>` : ''}${c.contact ? `<div class="v">${esc(L.attn)} ${esc(c.contact)}</div>` : ''}</div>` : '<div></div>';
+  const branch = r.branch.trim().replace(/\s+branch$/i, '');
+  const lines = [r.title, branch && `${branch} Branch`, [r.phone, r.email].filter(Boolean).join('  ·  ')].filter(Boolean);
+  const col2 = r.name || lines.length ? `<div><div class="lbl">${esc(L.preparedBy)}</div>${r.name ? `<div class="v big">${esc(r.name)}</div>` : ''}${lines.map(l => `<div class="v">${esc(l)}</div>`).join('')}</div>` : '<div></div>';
+  const col3 = `<div>${state.date ? `<div class="lbl">${esc(L.date)}</div><div class="v">${esc(fmtDate(state.date))}</div>` : ''}${state.validUntil ? `<div class="lbl">${esc(L.validUntil)}</div><div class="v">${esc(fmtDate(state.validUntil))}</div>` : ''}</div>`;
+  const notes = state.notes.trim() ? `<div class="notes"><span class="lbl">${esc(L.notes)}&nbsp;&nbsp;</span>${esc(state.notes.trim())}</div>` : '';
+  return `<div class="cg">${col1}${col2}${col3}</div>${notes}`;
+}
+function itemHTML(r) {
+  const L = labels(), vals = rates(r), shown = [0, 1, 2].filter(i => state.cols[i]);
+  const cells = shown.every(i => vals[i] == null) ? `<div class="inq">${esc(L.inquire)}</div>` : shown.map(i => `<div class="n">${fmt(vals[i])}</div>`).join('');
+  return `<div class="d"><span class="t">${esc(r.text)}</span>${r.green ? `<img class="leaf" src="${ASSETS.leaf}" alt="Green Leaf">` : ''}</div>${cells}`;
+}
+
+function buildBlocks() {
+  const L = labels(), M = DATA.meta, B = [];
+  const add = (kind, html, o = {}) => {
+    const el = document.createElement('div');
+    el.className = `blk b-${kind}${o.cls ? ' ' + o.cls : ''}`;
+    el.innerHTML = html;
+    if (o.id) el.dataset.id = o.id;
+    const b = Object.assign({ kind, el }, o); B.push(b); return b;
+  };
+  add('mast', `<a href="${esc(M.website)}"><img class="logo" src="${ASSETS.logo}" alt="Battlefield Equipment Rentals - Cat Rentals"></a><h1><span>${esc(M.title)}</span></h1>`);
+  if (hasCustomerBlock()) add('cust', customerHTML(), { gap: 2 });
+  const heads = [0, 1, 2].filter(i => state.cols[i]).map(i => `<div class="h">${esc(L.columns[i])}</div>`).join('');
+  let anyGreen = false, anySection = false;
+  const shownSecs = orderedSections().map(sec => ({ sec, vis: visibleRows(sec) })).filter(x => x.vis.some(y => isContent(y.r)));
+  shownSecs.forEach(({ sec, vis }, si) => {
+    anySection = true;
+    const mv = `<div class="mvp"><button data-mv="up" data-id="${esc(sec.id)}" title="Move this category up" ${si ? '' : 'disabled'}>▲</button><button data-mv="down" data-id="${esc(sec.id)}" title="Move this category down" ${si < shownSecs.length - 1 ? '' : 'disabled'}>▼</button></div>`;
+    add('sec', `<div>${esc(sec.name)}</div>${heads}${rmBtn('sec', sec.id)}${mv}`, { cls: 'cols', gap: 12.5, keep: 2, id: sec.id, sec: sec.id });
+    for (const x of vis) {
+      const r = x.r;
+      if (r.type === 'sub') add('sub', `${esc(r.text)}${rmBtn('head', r.id)}`, { keep: 1, id: r.id, sec: sec.id });
+      else if (r.type === 'group') add('grp', `${esc(r.text)}${rmBtn('head', r.id)}`, { keep: 1, id: r.id, sec: sec.id });
+      else if (r.type === 'item') {
+        const logoFrom = x.grp && x.grp.logo ? x.grp : x.sub && x.sub.logo ? x.sub : null;
+        add('item', itemHTML(r) + rmBtn('row', r.id), { cls: 'cols' + (r.green ? ' green' : '') + (r.indent ? ' indent' : ''), id: r.id, sec: sec.id, logoKey: logoFrom && logoFrom.id });
+        if (r.green) anyGreen = true;
+      }
+      else if (r.type === 'note') add('note', esc(r.text) + rmBtn('row', r.id), { id: r.id, sec: sec.id });
+      else if (r.type === 'text') add('text', esc(r.text) + rmBtn('row', r.id), { id: r.id, sec: sec.id });
+      else if (r.type === 'image' && ASSETS[r.image]) add('image', `<img src="${ASSETS[r.image]}" alt="${esc(r.text || '')}">${rmBtn('row', r.id)}`, { id: r.id, sec: sec.id });
+    }
+  });
+  if (!anySection) return null;
+  if (anyGreen) {
+    const p = String(M.greenLeaf || '').replace(/<g>/g, '<span class="g">').replace(/<\/g>/g, '</span>');
+    add('leafnote', `<img src="${ASSETS.leafBig}" alt=""><p>${p}</p>`, { gap: 12 });
+  }
+  const terms = (list) => list.map(t => /^(\t|\s{2,})/.test(t) ? `<div class="ind">${esc(t.trim())}</div>` : `<div>${esc(t)}</div>`).join('');
+  add('terms', `<div class="tt">Terms &amp; Conditions</div><div>${terms(M.termsLeft)}</div><div>${terms(M.termsRight)}</div>`, { gap: 18 });
+  const social = (M.social || []).map(([n, u], i) => `<a href="${esc(u)}" style="left:${i * 20}%" aria-label="${esc(n)}"></a>`).join('');
+  add('contact', `<a href="${esc(M.website)}"><img class="logo" src="${ASSETS.logo}" alt="Battlefield Equipment Rentals - Cat Rentals"></a>
+    <div class="call">${esc(M.callLine)}</div><a class="map" href="${esc(M.mapUrl)}">${esc(M.mapText)}</a>
+    <div class="about">${M.about}</div><div class="social"><img src="${ASSETS.social}" alt="">${social}</div>`, { gap: 30 });
+  return B;
+}
+
+let pageCount = 0;
+function renderCard() {
+  const host = $('#pages'), meas = $('#measure');
+  const cols = colTemplate();
+  host.style.setProperty('--cols', cols); meas.style.setProperty('--cols', cols);
+  const blocks = buildBlocks();
+  meas.innerHTML = '';
+  if (!blocks) {
+    host.innerHTML = `<div class="pv-empty"><p><b>No equipment is selected.</b></p><p>Tick the sections you want on the Equipment tab.</p></div>`;
+    pageCount = 0; updatePvInfo(); return;
+  }
+  for (const b of blocks) meas.appendChild(b.el);
+  // Shrink the page title if the condensed font is unavailable.
+  const h1 = $('h1 span', meas);
+  if (h1) { const max = 495 * PT, w = h1.offsetWidth; if (w > max) h1.parentNode.style.fontSize = (16.3 * max / w).toFixed(2) + 'pt'; }
+  for (const b of blocks) {
+    b.h = b.el.offsetHeight;
+    const t = b.el.querySelector('.t');
+    if (t) b.textRight = t.offsetLeft + t.offsetWidth + (t.offsetParent === b.el ? 0 : t.offsetParent.offsetLeft);
+    // Green Leaf sits in its usual column, or just after a description that runs past it.
+    const leaf = b.el.querySelector('.leaf');
+    if (leaf) { const d = leaf.parentNode, textEnd = t.offsetLeft + t.offsetWidth; leaf.style.left = textEnd + 4 * PT > 239 * PT ? (textEnd + 4 * PT) + 'px' : ''; }
+  }
+  // Pack blocks into letter pages; headings stay with the lines under them.
+  const H = PAGE_CONTENT_H * PT, pages = [];
+  let cur, y = 0;
+  const newPage = () => { cur = []; pages.push(cur); y = 0; };
+  newPage();
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    let gap = cur.length ? (b.gap || 0) * PT : 0;
+    let need = gap + b.h;
+    for (let k = 1; k <= (b.keep || 0) && i + k < blocks.length; k++) { const nb = blocks[i + k]; if (nb.kind === 'sec' || !nb.sec) break; need += nb.h; }
+    if (cur.length && y + need > H) { newPage(); gap = 0; }
+    b.y = y + gap; b.gapPx = gap; cur.push(b); y = b.y + b.h;
+  }
+  host.innerHTML = '';
+  const L = labels();
+  pages.forEach((list, pi) => {
+    const page = document.createElement('div'); page.className = 'page rc';
+    const body = document.createElement('div'); body.className = 'page-body';
+    for (const b of list) { b.el.style.marginTop = b.gapPx ? b.gapPx + 'px' : ''; body.appendChild(b.el); }
+    const foot = document.createElement('div'); foot.className = 'page-foot';
+    foot.innerHTML = `<b>${esc(DATA.meta.footer)}</b> - ${esc(L.page.replace('{n}', pi + 1).replace('{t}', pages.length))}`;
+    page.append(body, foot); host.appendChild(page);
+    b_pageBody.set(list, body);
+  });
+  placeCatLogos(pages);
+  pageCount = pages.length;
+  updatePvInfo();
+}
+const b_pageBody = new WeakMap();
+
+// One Cat logo per logo group, beside two adjacent short lines near the middle of the group (as on the printed card).
+function placeCatLogos(pages) {
+  const LOGO_LEFT = 223.2 * PT, LOGO_H = 21.5 * PT, limit = LOGO_LEFT - 3 * PT;
+  const runs = new Map();
+  pages.forEach(list => {
+    let run = null;
+    for (const b of list) {
+      if (b.kind === 'item' && b.logoKey) {
+        if (!run || run.key !== b.logoKey) { run = { key: b.logoKey, list, rows: [] }; (runs.get(b.logoKey) || runs.set(b.logoKey, []).get(b.logoKey)).push(run); }
+        run.rows.push(b);
+      } else if (b.kind !== 'item') run = null;
+    }
+  });
+  for (const segs of runs.values()) {
+    const seg = segs.reduce((a, s) => (s.rows.length > a.rows.length ? s : a));
+    const rows = seg.rows, mid = (rows.length - 1) / 2;
+    let best = null;
+    const fits = b => (b.textRight || 0) < limit;
+    for (let j = 0; j < rows.length - 1; j++) if (fits(rows[j]) && fits(rows[j + 1])) { const d = Math.abs(j + 0.5 - mid); if (!best || d < best.d) best = { d, top: rows[j].y + rows[j].h - LOGO_H / 2 }; }
+    if (!best && rows.length === 1 && fits(rows[0])) best = { top: rows[0].y + rows[0].h / 2 - LOGO_H / 2 };
+    if (!best) continue;
+    const img = document.createElement('img');
+    img.className = 'cat-logo'; img.src = ASSETS.cat; img.alt = 'Cat'; img.style.top = best.top + 'px';
+    b_pageBody.get(seg.list).appendChild(img);
+  }
+}
+function counts() {
+  let items = 0, on = 0;
+  for (const sec of DATA.sections) {
+    for (const r of sectionRows(sec)) if (r.type === 'item') { items++; if (!state.hiddenSections[sec.id] && rowOn(r)) on++; }
+  }
+  const secs = DATA.sections.filter(s => visibleRows(s).some(x => isContent(x.r))).length;
+  // items on the card whose rates differ from list price (typed or adjusted)
+  let edits = 0;
+  for (const sec of DATA.sections) for (const x of visibleRows(sec)) { const r = x.r; if (r.type === 'item' && !r.custom && rates(r).some((v, i) => !sameRate(v, r.rates[i]))) edits++; }
+  return { items, on, secs, edits };
+}
+function updatePvInfo() {
+  const c = counts();
+  $('#pvInfo').innerHTML = `<b>${pageCount}</b> page${pageCount === 1 ? '' : 's'} · <b>${c.secs}</b> section${c.secs === 1 ? '' : 's'} · <b>${c.on}</b> item${c.on === 1 ? '' : 's'}`;
+  $('#eqCount').textContent = `${c.on} of ${c.items} items included`;
+}
+
+/* ---------------- editor: equipment ---------------- */
+const ICON = {
+  chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  grip: '<svg viewBox="0 0 12 18" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+};
+const openSecs = new Set();
+let rowEls = new Map();
+function renderEditor() {
+  const host = $('#secList');
+  rowEls = new Map();
+  let html = '';
+  const secs = orderedSections();
+  for (const [si, sec] of secs.entries()) {
+    const { info } = structure(sec);
+    let body = `<div class="e-cols"><span></span><span style="text-align:left;padding:0">Description</span>${COL_NAMES.map((n, i) => `<span class="${state.cols[i] ? '' : 'off'}">${n}</span>`).join('')}<span></span></div>`;
+    info.forEach((x, idx) => {
+      const r = x.r, id = esc(r.id);
+      if (r.type === 'sub') body += `<div class="e-sub" data-id="${id}"><input type="checkbox" class="cb" data-act="head" aria-label="Include ${esc(r.text)}"><span>${esc(r.text)}</span></div>`;
+      else if (r.type === 'group') body += `<div class="e-grp" data-id="${id}"><input type="checkbox" class="cb" data-act="head" aria-label="Include ${esc(r.text)}"><span>${esc(r.text)}</span></div>`;
+      else if (r.type === 'item') {
+        const vals = rates(r);
+        const desc = r.custom
+          ? `<input class="e-desc-in" data-act="desc" value="${esc(r.text)}" placeholder="Describe the equipment" aria-label="Description"><div class="ck"><span class="tag">Custom item</span><input class="e-klass-in" data-act="klass" value="${esc(r.klass || '')}" placeholder="Klass code" title="Klass code(s) for the ERP export. Not shown on the PDF." aria-label="Klass code"></div>`
+          : `${esc(r.text)}${r.green ? `<img class="leaf" src="${ASSETS.leaf}" alt="Green Leaf" title="Green Leaf equipment">` : ''}`;
+        body += `<div class="e-item${r.green ? ' green' : ''}${r.indent ? ' indent' : ''}${r.custom ? ' custom' : ''}" data-id="${id}">
+          <input type="checkbox" class="cb" data-act="row" aria-label="Include ${esc(r.text)}">
+          <div class="e-desc">${desc}</div>
+          ${[0, 1, 2].map(i => `<input class="rate" data-i="${i}" inputmode="decimal" autocomplete="off" value="${fmt(vals[i])}" placeholder="—" aria-label="${COL_NAMES[i]} rate">`).join('')}
+          ${r.custom ? `<button class="e-act show" data-act="delcustom" title="Delete this custom item">${ICON.trash}</button>` : `<button class="e-act" data-act="reset" title="Reset to list price">${ICON.reset}</button>`}
+        </div>`;
+      } else {
+        const inner = r.type === 'image' ? `<img src="${ASSETS[r.image] || ''}" alt="${esc(r.text)}">` : `<span>${esc(r.text)}</span>`;
+        body += `<div class="e-note ${r.type}" data-id="${id}"><input type="checkbox" class="cb" data-act="row" aria-label="Include this ${r.type}">${inner}</div>`;
+      }
+      // "+ Add item" at the end of each heading's block (or of the section).
+      const next = info[idx + 1];
+      if (!next || next.r.type === 'sub') {
+        const scope = x.sub || (r.type === 'sub' ? r : null);
+        const items = info.filter((y, j) => j <= idx && y.r.type === 'item' && (scope ? y.sub === scope : !y.sub));
+        const anchor = items.length ? items[items.length - 1].r.id : r.id;
+        body += `<button class="e-add" data-act="add" data-anchor="${esc(anchor)}">+ Add item${scope ? ' to ' + esc(scope.text.toLowerCase()) : ''}</button>`;
+      }
+    });
+    html += `<div class="sec${openSecs.has(sec.id) ? ' open' : ''}" data-sec="${esc(sec.id)}">
+      <div class="sec-head" data-act="toggle"><span class="drag" data-act="grip" title="Drag to change the order of categories">${ICON.grip}</span><input type="checkbox" class="cb" data-act="sec" aria-label="Include ${esc(sec.name)}"><button class="sec-name" data-act="toggle" aria-expanded="${openSecs.has(sec.id)}">${esc(sec.name)}</button><span class="sec-count"></span>
+        <button class="mv" data-act="up" title="Move up" aria-label="Move ${esc(sec.name)} up" ${si ? '' : 'disabled'}>${ICON.up}</button><button class="mv" data-act="down" title="Move down" aria-label="Move ${esc(sec.name)} down" ${si < secs.length - 1 ? '' : 'disabled'}>${ICON.down}</button>${ICON.chev}</div>
+      <div class="sec-body">${body}</div></div>`;
+  }
+  host.innerHTML = html;
+  $('#btnResetOrder').hidden = !orderChanged();
+  for (const el of $$('[data-id]', host)) rowEls.set(el.dataset.id, el);
+  syncEditor();
+  applySearch();
+}
+function syncEditor() {
+  for (const sec of DATA.sections) {
+    const el = $(`.sec[data-sec="${CSS.escape(sec.id)}"]`, $('#secList'));
+    if (!el) continue;
+    const { info, ranges } = structure(sec);
+    const content = info.filter(x => isContent(x.r));
+    const anyOn = content.some(x => rowOn(x.r)), anyOff = content.some(x => !rowOn(x.r));
+    const secHidden = !!state.hiddenSections[sec.id];
+    const cb = $('.sec-head .cb', el);
+    cb.checked = !secHidden && anyOn; cb.indeterminate = !secHidden && anyOn && anyOff;
+    el.classList.toggle('off', secHidden || !anyOn);
+    const items = info.filter(x => x.r.type === 'item');
+    $('.sec-count', el).textContent = `${secHidden ? 0 : items.filter(x => rowOn(x.r)).length} / ${items.length}`;
+    for (const x of info) {
+      const r = x.r, rowEl = rowEls.get(r.id);
+      if (!rowEl) continue;
+      const c = rowEl.querySelector('.cb');
+      if (!isContent(r)) {
+        const rg = ranges.get(r.id), on = secHidden ? 0 : rg.filter(rowOn).length;
+        c.checked = on > 0; c.indeterminate = on > 0 && on < rg.length;
+        rowEl.classList.toggle('off', on === 0);
+        continue;
+      }
+      c.checked = rowOn(r) && !secHidden;
+      rowEl.classList.toggle('off', !rowOn(r) || secHidden);
+      if (r.type === 'item') {
+        const vals = rates(r);
+        let anyEdit = false;
+        $$('.rate', rowEl).forEach(inp => {
+          const i = +inp.dataset.i, ed = isEdited(r, i), adj = isAdjusted(r, i), rule = adj && ruleFor(r, i);
+          anyEdit = anyEdit || ed;
+          inp.classList.toggle('edited', ed);
+          inp.classList.toggle('adjusted', adj);
+          if (document.activeElement !== inp) { inp.value = fmt(vals[i]); inp.classList.remove('bad'); }
+          const list = `List price: ${r.rates[i] == null ? 'blank' : '$' + fmt(r.rates[i])}`;
+          inp.title = ed ? `${list} · typed by hand` : adj ? `${list} · ${rule.pct[i] > 0 ? '+' : ''}${rule.pct[i]}% (${scopeLabel(rule.scope)})` : '';
+        });
+        const rb = rowEl.querySelector('[data-act="reset"]');
+        if (rb) rb.classList.toggle('show', anyEdit);
+      }
+    }
+  }
+  updatePvInfo();
+}
+function applySearch() {
+  const q = $('#search').value.trim().toLowerCase();
+  let any = false;
+  for (const sec of DATA.sections) {
+    const el = $(`.sec[data-sec="${CSS.escape(sec.id)}"]`, $('#secList'));
+    if (!el) continue;
+    if (!q) { el.classList.remove('hidden-by-search'); $$('.hidden-by-search', el).forEach(e => e.classList.remove('hidden-by-search')); el.classList.toggle('open', openSecs.has(sec.id)); any = true; continue; }
+    const secMatch = sec.name.toLowerCase().includes(q);
+    const { info } = structure(sec);
+    const show = new Set();
+    for (const x of info) {
+      if (secMatch || x.r.text.toLowerCase().includes(q)) { show.add(x.r.id); if (x.sub) show.add(x.sub.id); if (x.grp) show.add(x.grp.id); }
+    }
+    for (const x of info) { const e = rowEls.get(x.r.id); if (e) e.classList.toggle('hidden-by-search', !show.has(x.r.id)); }
+    $$('.e-add', el).forEach(b => b.classList.toggle('hidden-by-search', !secMatch));
+    el.classList.toggle('hidden-by-search', !show.size);
+    el.classList.toggle('open', show.size > 0);
+    any = any || show.size > 0;
+  }
+  $('#emptySearch').style.display = any ? 'none' : 'block';
+}
+function findRow(id) {
+  for (const sec of DATA.sections) for (const r of sectionRows(sec)) if (r.id === id) return { r, sec };
+  return null;
+}
+function setRange(sec, list, on) {
+  for (const r of list) { if (on) delete state.hidden[r.id]; else state.hidden[r.id] = true; }
+  if (on) delete state.hiddenSections[sec.id];
+}
+function onEditorClick(e) {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act, secEl = t.closest('.sec'), sec = secEl && DATA.sections.find(s => s.id === secEl.dataset.sec);
+  const rowEl = t.closest('[data-id]'), id = rowEl && rowEl.dataset.id;
+  if (act === 'grip') return;
+  if (act === 'toggle') {
+    if (e.target.classList.contains('cb')) return;
+    const open = !secEl.classList.contains('open');
+    secEl.classList.toggle('open', open); $('.sec-name', secEl).setAttribute('aria-expanded', open);
+    open ? openSecs.add(sec.id) : openSecs.delete(sec.id);
+  } else if (act === 'up' || act === 'down') {
+    const ids = orderedSections().map(s => s.id);
+    if (moveSection(sec.id, ids.indexOf(sec.id) + (act === 'up' ? -1 : 1))) afterReorder(sec.id, act);
+  } else if (act === 'reset') {
+    delete state.overrides[id]; changed();
+  } else if (act === 'delcustom') {
+    const gone = state.custom.find(c => c.id === id);
+    state.custom = state.custom.filter(c => c.id !== id);
+    for (const c of state.custom) if (c.after === id) c.after = gone.after;
+    delete state.hidden[id];
+    renderEditor(); changed({ noEditor: true });
+  } else if (act === 'add') {
+    const c = { id: 'c-' + uid(), sec: sec.id, after: t.dataset.anchor, type: 'item', custom: true, text: '', rates: [null, null, null] };
+    // keep later custom items after the new one
+    for (const o of state.custom) if (o.after === c.after && o.sec === sec.id) o.after = c.id;
+    state.custom.push(c); delete state.hiddenSections[sec.id];
+    renderEditor(); changed({ noEditor: true });
+    const inp = rowEls.get(c.id)?.querySelector('.e-desc-in'); if (inp) { inp.focus(); }
+  }
+}
+function onEditorChange(e) {
+  const t = e.target;
+  if (!t.classList.contains('cb')) return;
+  const secEl = t.closest('.sec'), sec = DATA.sections.find(s => s.id === secEl.dataset.sec);
+  const act = t.dataset.act, id = t.closest('[data-id]')?.dataset.id;
+  const { info, ranges } = structure(sec);
+  const content = info.filter(x => isContent(x.r)).map(x => x.r);
+  // Ticking one line of a removed section brings back just that line, not the whole section.
+  const reveal = () => { if (state.hiddenSections[sec.id]) { setRange(sec, content, false); delete state.hiddenSections[sec.id]; } };
+  if (act === 'sec') {
+    if (t.checked) {
+      delete state.hiddenSections[sec.id];
+      if (!content.some(rowOn)) setRange(sec, content, true);
+    } else state.hiddenSections[sec.id] = true;
+  } else if (act === 'head') {
+    const rg = ranges.get(id), turnOn = state.hiddenSections[sec.id] || !rg.some(rowOn);
+    if (turnOn) reveal();
+    setRange(sec, rg, turnOn);
+  } else if (act === 'row') {
+    if (t.checked) { reveal(); delete state.hidden[id]; } else state.hidden[id] = true;
+  }
+  changed();
+}
+function onEditorInput(e) {
+  const t = e.target, rowEl = t.closest('[data-id]');
+  if (!rowEl) return;
+  const found = findRow(rowEl.dataset.id); if (!found) return;
+  const r = found.r;
+  if (t.classList.contains('e-desc-in')) { r.text = t.value; changed({ noEditor: true, noPricing: true }); return; }
+  if (t.classList.contains('e-klass-in')) { r.klass = t.value; t.classList.remove('missing'); changed({ noEditor: true, noPricing: true }); return; }
+  if (!t.classList.contains('rate')) return;
+  const i = +t.dataset.i, v = parseRate(t.value);
+  t.classList.toggle('bad', v === undefined);
+  if (v === undefined) return;
+  if (r.custom) r.rates[i] = v;
+  else {
+    const o = state.overrides[r.id] || {};
+    if (sameRate(v, autoRates(r)[i])) delete o[i]; else o[i] = v;
+    if (Object.keys(o).length) state.overrides[r.id] = o; else delete state.overrides[r.id];
+    t.classList.toggle('edited', isEdited(r, i));
+    rowEl.querySelector('[data-act="reset"]')?.classList.toggle('show', !!state.overrides[r.id]);
+  }
+  changed({ noEditor: true });
+}
+// Re-draw the list after a category moves, keeping the moved category (and the focused arrow) in view.
+function afterReorder(id, focusAct) {
+  renderEditor(); changed({ noEditor: true });
+  const el = $(`.sec[data-sec="${CSS.escape(id)}"]`, $('#secList'));
+  if (!el) return;
+  el.scrollIntoView({ block: 'nearest' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  const btn = focusAct && el.querySelector(`.mv[data-act="${focusAct}"]`);
+  if (btn && !btn.disabled) btn.focus();
+}
+// Drag a category by its grip to reorder.
+let dragSec = null;
+function initDrag(list) {
+  const clear = () => $$('.drop-before, .drop-after', list).forEach(e => e.classList.remove('drop-before', 'drop-after'));
+  list.addEventListener('pointerdown', e => { const g = e.target.closest('.drag'); if (g) g.closest('.sec').draggable = true; });
+  list.addEventListener('dragstart', e => {
+    const s = e.target.closest && e.target.closest('.sec');
+    if (!s || !s.draggable) { e.preventDefault(); return; }
+    dragSec = s.dataset.sec; s.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragSec);
+  });
+  list.addEventListener('dragover', e => {
+    if (!dragSec) return;
+    const s = e.target.closest('.sec'); if (!s) return;
+    e.preventDefault(); clear();
+    if (s.dataset.sec === dragSec) return;
+    const r = s.getBoundingClientRect();
+    s.classList.add(e.clientY < r.top + Math.min(r.height, 46) / 2 ? 'drop-before' : 'drop-after');
+  });
+  list.addEventListener('drop', e => {
+    if (!dragSec) return;
+    e.preventDefault();
+    const s = e.target.closest('.sec'), moved = dragSec;
+    const before = s && s.classList.contains('drop-before');
+    clear(); dragSec = null;
+    if (!s || s.dataset.sec === moved) return;
+    const ids = orderedSections().map(x => x.id).filter(x => x !== moved);
+    let to = ids.indexOf(s.dataset.sec) + (before ? 0 : 1);
+    ids.splice(to, 0, moved); state.order = ids;
+    afterReorder(moved);
+  });
+  list.addEventListener('dragend', () => { clear(); dragSec = null; $$('.sec', list).forEach(s => { s.draggable = false; s.classList.remove('dragging'); }); });
+}
+function onEditorBlur(e) {
+  const t = e.target;
+  if (t.classList && t.classList.contains('rate')) { const v = parseRate(t.value); if (v !== undefined) { t.value = fmt(v); t.classList.remove('bad'); } }
+}
+function locate(id) {
+  const found = findRow(id); if (!found) return;
+  selectTab('equipment');
+  $('#search').value = ''; applySearch();
+  openSecs.add(found.sec.id);
+  const secEl = $(`.sec[data-sec="${CSS.escape(found.sec.id)}"]`); secEl.classList.add('open');
+  const el = rowEls.get(id) || secEl;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+/* ---------------- editor: pricing ---------------- */
+function renderColChecks() {
+  $('#colChecks').innerHTML = COL_NAMES.map((n, i) => `<label class="check"><input type="checkbox" data-col="${i}" ${state.cols[i] ? 'checked' : ''}> ${n}</label>`).join('<span style="width:14px"></span>');
+}
+function renderPricing() {
+  // "Apply to" list: all equipment, then each category (in the rep's order) with its product groups.
+  const sel = $('#adjScope'), keep = sel.value;
+  let opts = `<option value="*">All equipment</option>`;
+  for (const s of orderedSections()) {
+    const subs = s.rows.filter(r => r.type === 'sub' && s.rows.some(x => x.type === 'item' && ROW_INDEX.get(x.id)?.sub === r));
+    opts += `<optgroup label="${esc(titleCase(s.name))}"><option value="sec:${esc(s.id)}">All ${esc(titleCase(s.name))}</option>${subs.map(r => `<option value="sub:${esc(r.id)}"> ${esc(titleCase(r.text))}</option>`).join('')}</optgroup>`;
+  }
+  sel.innerHTML = opts;
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : '*';
+  // active adjustments
+  const rules = state.adjust.filter(a => scopeLabel(a.scope));
+  $('#adjList').innerHTML = rules.length ? `<ul class="changes rules" style="margin:4px 0 10px">${rules.map(a => {
+    const kind = a.scope === '*' ? '' : a.scope.startsWith('sec:') ? 'Category' : 'Product group';
+    return `<li><div><div class="what">${esc(scopeLabel(a.scope))}${kind ? `<span class="tag">${kind}</span>` : ''}</div><div class="where">${scopeRows(a.scope).length} items</div></div>
+      <div class="acts"><button class="btn sm" data-rule-edit="${esc(a.scope)}">Edit</button><button class="btn sm ghost" data-rule-del="${esc(a.scope)}">Remove</button></div>
+      <div class="diff">${esc(pctText(a.pct))}</div></li>`; }).join('')}</ul>` : '';
+  // prices typed by hand
+  const list = [];
+  for (const sec of orderedSections()) for (const r of sec.rows) if (state.overrides[r.id]) list.push({ r, sec });
+  $('#chgCount').textContent = list.length ? `(${list.length})` : '';
+  if (!list.length) { $('#chgWrap').innerHTML = '<p class="small muted">None. To set one price, type in its box on the Equipment tab.</p>'; return; }
+  const show = vals => vals.map(v => (v == null ? '—' : fmt(v))).join(' / ');
+  $('#chgWrap').innerHTML = `<ul class="changes">${list.map(({ r, sec }) => `<li><div><div class="what">${esc(r.text)}</div><div class="where">${esc(titleCase(sec.name))}${state.hidden[r.id] || state.hiddenSections[sec.id] ? ' · not on this rate card' : ''}</div></div>
+    <button class="btn sm" data-reset="${esc(r.id)}">Reset</button>
+    <div class="diff"><s>${show(r.rates)}</s> → <b>${show(rates(r))}</b></div></li>`).join('')}</ul>
+    <p style="margin-top:12px"><button class="btn sm" id="btnResetAll">Reset all typed prices</button></p>`;
+}
+function loadRuleIntoForm() {
+  const a = state.adjust.find(x => x.scope === $('#adjScope').value);
+  [0, 1, 2].forEach(i => { $('#adj' + i).value = a && a.pct[i] != null ? a.pct[i] : ''; });
+}
+function applyAdjust() {
+  const scope = $('#adjScope').value;
+  const raw = [0, 1, 2].map(i => $('#adj' + i).value.trim());
+  const pct = raw.map(v => (v === '' ? null : Math.round(Number(v) * 100) / 100));
+  if (pct.some(v => v != null && (!Number.isFinite(v) || v <= -100 || v > 500))) { toast('Enter percentages between -99 and 500.', 'error'); return; }
+  state.adjust = state.adjust.filter(a => a.scope !== scope);
+  const label = scopeLabel(scope), items = scopeRows(scope);
+  const typed = items.filter(r => state.overrides[r.id]).length;
+  if (pct.every(v => v == null)) { changed(); toast(`Removed the adjustment for ${label}.`); return; }
+  state.adjust.push({ scope, pct });
+  changed();
+  toast(`${pctText(pct)} for ${label}.${typed ? ` ${typed} item${typed === 1 ? ' has a' : 's have'} typed price${typed === 1 ? '' : 's'}, which stay${typed === 1 ? 's' : ''} as typed.` : ''}`);
+}
+
+/* ---------------- customer form ---------------- */
+function bindForm() {
+  for (const el of $$('[data-bind]')) {
+    const path = el.dataset.bind.split('.');
+    el.value = path.reduce((o, k) => o?.[k], state) ?? '';
+  }
+}
+function onFormInput(e) {
+  const el = e.target; if (!el.dataset.bind) return;
+  const path = el.dataset.bind.split('.');
+  let o = state; for (const k of path.slice(0, -1)) o = o[k];
+  o[path[path.length - 1]] = el.value;
+  if (path[0] === 'rep') store.set('me', state.rep);
+  changed({ noEditor: true, noPricing: true });
+}
+
+/* ---------------- save / open / new ---------------- */
+function library() { return store.get('cards', {}); }
+function saveToLibrary(quiet) {
+  state.savedAt = new Date().toISOString();
+  const lib = library(); lib[state.id] = state;
+  if (!store.set('cards', lib)) { if (!quiet) toast('This browser blocked saving. Use “Save a copy to a file” in the ••• menu instead.', 'error'); return false; }
+  dirty = false; store.set('draft', state); store.set('dirty', false); updateDocBar();
+  if (!quiet) toast(`Saved “${cardName()}” on this computer.`);
+  return true;
+}
+async function saveToFile() {
+  const json = fileJson();
+  const name = `${safeFile(cardName())} - Rate Card.json`;
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Rate card', accept: { 'application/json': ['.json'] } }] });
+      const w = await h.createWritable(); await w.write(json); await w.close();
+      toast(`Saved a copy to ${h.name}.`); return;
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  download(name, json, 'application/json');
+  toast('Downloaded a copy of this rate card.');
+}
+function loadState(s, msg) {
+  state = normalise(clone(s));
+  dirty = false; store.set('draft', state); store.set('dirty', false);
+  bindForm(); renderColChecks(); renderEditor(); renderPricing(); updateDocBar(); renderFlow(); scheduleRender();
+  if (s.dataVersion && s.dataVersion !== DATA.meta.version) toast(`This rate card was made with ${s.dataVersion} rates. It now uses current list prices (${DATA.meta.version}), and your own price changes are kept.`);
+  else if (msg) toast(msg);
+}
+function renderLibrary() {
+  const lib = Object.values(library()).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+  const ul = $('#libList');
+  if (!lib.length) { ul.innerHTML = '<li class="lib-empty">No saved rate cards on this computer yet.</li>'; return; }
+  ul.innerHTML = lib.map(c => `<li><div class="meta"><b>${esc(c.customer?.company || 'Untitled rate card')}</b><span>${c.customer?.contact ? esc(c.customer.contact) + ' · ' : ''}Saved ${c.savedAt ? new Date(c.savedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' }) : ''}${c.id === state.id ? ' · open now' : ''}</span></div>
+    <button class="btn sm" data-lib-open="${esc(c.id)}">Open</button><button class="btn sm ghost icon" data-lib-del="${esc(c.id)}" title="Delete from this computer" aria-label="Delete">${ICON.trash}</button></li>`).join('');
+}
+async function guardUnsaved() {
+  if (!dirty) return true;
+  return confirmBox('Discard unsaved changes?', `“${cardName()}” has changes that aren't saved. If you continue, they will be lost.`, 'Discard changes');
+}
+
+/* ---------------- publish ---------------- */
+function openPublish() {
+  if (sandboxStop('Publish PDF')) return;
+  const c = counts();
+  if (!c.secs) { toast('Add some equipment before you publish.', 'error'); return; }
+  const warn = [];
+  if (!state.customer.company.trim()) warn.push('No customer name is entered, so the PDF won’t say who it was prepared for.');
+  if (!state.rep.name.trim()) warn.push('Your name isn’t entered on the Customer tab.');
+  if (state.custom.some(x => !x.text.trim() && !state.hidden[x.id])) warn.push('A custom item has no description.');
+  $('#pubWarn').innerHTML = warn.map(w => `<div class="warn">${esc(w)}</div>`).join('');
+  $('#pubSummary').innerHTML = [[pageCount, 'pages'], [c.secs, 'sections'], [c.on, 'items'], [c.edits, 'items not at list price']].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+  $('#pubName').value = `${state.customer.company.trim() ? safeFile(state.customer.company) + ' - ' : ''}Battlefield ${DATA.meta.year} Rental Rates`;
+  $('#dlgPublish').showModal();
+}
+let titleBeforePrint = null;
+function doPublish() {
+  saveToLibrary(true);
+  titleBeforePrint = document.title;
+  document.title = safeFile($('#pubName').value.replace(/\.pdf$/i, '')) || 'Rate card';
+  $('#dlgPublish').close();
+  setTimeout(() => window.print(), 60);
+}
+window.addEventListener('afterprint', () => { if (titleBeforePrint) { document.title = titleBeforePrint; titleBeforePrint = null; } });
+
+/* ---------------- approval & ERP export ---------------- */
+const managers = () => (DATA.meta.managers || []).filter(m => m && m.email);
+const findManager = email => managers().find(m => m.email.toLowerCase() === String(email || '').toLowerCase());
+const pinHash = pin => sha256('ber-approve:' + String(pin).trim());
+const approvalCode = (a, m) => sha256(['ber-approval', a.fp, m.email.toLowerCase(), a.at, m.pinHash].join('|'));
+const klassOf = r => (Array.isArray(r.klass) ? r.klass : String(r.klass || '').split(/[,;\s]+/)).map(k => String(k).trim().toUpperCase()).filter(Boolean);
+const whenText = iso => (iso ? new Date(iso).toLocaleDateString('en-CA', { dateStyle: 'medium' }) : '');
+const fileJson = () => JSON.stringify(Object.assign({ app: 'Battlefield Rate Card Builder' }, state), null, 1);
+// Everything that reaches the PDF or the CSV. Any change to it cancels a submission or approval.
+function fingerprint() {
+  const { id, savedAt, approval, v, ...rest } = state;
+  return sha256(canon(Object.assign(rest, { list: DATA.meta.version })));
+}
+function approvalStatus() {
+  const a = state.approval;
+  if (!a) return 'draft';
+  if (a.status === 'declined') return 'declined';
+  if (a.fp !== fingerprint()) return 'changed';
+  if (a.status === 'submitted') return 'submitted';
+  const m = a.status === 'approved' && findManager(a.byEmail);
+  return m && a.code === approvalCode(a, m) ? 'approved' : 'changed';
+}
+// Items on the card at a price other than list, plus custom items, with the rate columns shown on the card.
+function erpItems() {
+  const out = [];
+  for (const sec of orderedSections()) for (const x of visibleRows(sec)) {
+    const r = x.r; if (r.type !== 'item') continue;
+    const vals = rates(r), cols = [0, 1, 2].filter(i => state.cols[i] && vals[i] != null);
+    if (!cols.length || (!r.custom && cols.every(i => sameRate(vals[i], r.rates[i])))) continue;
+    out.push({ r, sec, vals, cols, klass: klassOf(r) });
+  }
+  return out;
+}
+const erpLineCount = items => items.reduce((n, x) => n + x.klass.length * x.cols.length, 0);
+const itemName = x => (x.r.text.trim() || 'Untitled custom item');
+
+function renderFlow() {
+  $('#flowbar').hidden = !APPROVAL_ON;
+  $$('[data-approval]').forEach(el => { el.hidden = !APPROVAL_ON; });
+  if (!APPROVAL_ON) { $('#btnCsv').disabled = false; return; }
+  const st = approvalStatus(), a = state.approval || {};
+  const pill = { draft: 'Draft', submitted: 'Waiting for approval', approved: 'Approved', changed: 'Changed', declined: 'Needs changes' }[st];
+  const msg = {
+    draft: 'When the rate card is ready, submit it to your sales manager for approval.',
+    submitted: `Submitted to ${a.toName} on ${whenText(a.submittedAt)}.`,
+    approved: `Approved by ${a.by} on ${whenText(a.at)}. The CSV for MOAB can now be exported.`,
+    changed: `Changed since it was ${a.status === 'approved' ? 'approved' : 'submitted'}. Submit it again for approval.`,
+    declined: `${a.by || 'Your sales manager'} asked for changes: ${a.note || ''}`,
+  }[st];
+  const B = (act, label, cls = '') => `<button class="btn sm ${cls}" data-flow="${act}">${label}</button>`;
+  $('#flowPill').textContent = pill; $('#flowPill').className = 'pill ' + st;
+  $('#flowMsg').textContent = msg; $('#flowMsg').title = msg;
+  $('#flowBtns').innerHTML = st === 'submitted' ? B('submit', 'Resubmit', 'ghost') + B('review', 'Review &amp; approve')
+    : st === 'approved' ? B('review', 'View approval', 'ghost') + B('torep', 'Email approved file to rep', 'ghost')
+    : st === 'declined' ? B('review', 'View', 'ghost') + B('submit', 'Submit again')
+    : B('submit', st === 'changed' ? 'Submit again' : 'Submit for approval');
+  $('#btnCsv').disabled = st !== 'approved';
+}
+
+function openSubmit() {
+  const c = counts();
+  if (!c.secs) { toast('Add some equipment before you submit.', 'error'); return; }
+  const items = erpItems(), errs = [], warns = [];
+  const noKlass = items.filter(x => !x.klass.length), customNoKlass = noKlass.filter(x => x.r.custom), listNoKlass = noKlass.filter(x => !x.r.custom);
+  if (!state.customer.number.trim()) errs.push('Enter the Customer number on the Customer tab.');
+  if (customNoKlass.length) errs.push(`Add a Klass code to ${customNoKlass.length === 1 ? 'this custom item' : 'these custom items'} on the Equipment tab: ${customNoKlass.map(itemName).join('; ')}.`);
+  if (!managers().length) errs.push('No sales managers are set up yet. Ask the admin to add one.');
+  if (!state.customer.company.trim()) warns.push('No customer name is entered.');
+  if (state.custom.some(x => !x.text.trim() && !state.hidden[x.id])) warns.push('A custom item has no description.');
+  if (listNoKlass.length) warns.push(`${listNoKlass.length === 1 ? 'This item has' : 'These items have'} no Klass code in the rate list, so ${listNoKlass.length === 1 ? 'it' : 'they'} can't go in the CSV: ${listNoKlass.map(itemName).join('; ')}.`);
+  if (!items.length) warns.push('No prices differ from the list price, so the CSV for the ERP will be empty.');
+  for (const x of customNoKlass) rowEls.get(x.r.id)?.querySelector('.e-klass-in')?.classList.add('missing');
+  $('#subWarn').innerHTML = errs.map(w => `<div class="err-box">${esc(w)}</div>`).join('') + warns.map(w => `<div class="warn">${esc(w)}</div>`).join('');
+  $('#subSummary').innerHTML = [[c.on, 'items on the card'], [items.length, 'items at special prices'], [erpLineCount(items), 'lines in the CSV'], [pageCount, 'PDF pages']].map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join('');
+  $('#subTo').innerHTML = managers().map(m => `<option value="${esc(m.email)}">${esc(m.name)} (${esc(m.email)})</option>`).join('');
+  if (state.approval && findManager(state.approval.to)) $('#subTo').value = state.approval.to;
+  $('#subFile').textContent = `${safeFile(cardName())} - for approval.json`;
+  $('#subGo').disabled = errs.length > 0;
+  $('#dlgSubmit').showModal();
+}
+function doSubmit() {
+  const m = findManager($('#subTo').value); if (!m) return;
+  state.approval = { status: 'submitted', fp: fingerprint(), to: m.email, toName: m.name, submittedAt: new Date().toISOString(), submittedBy: state.rep.name.trim() };
+  saveToLibrary(true); // the downloaded file carries the submission, so go on even where the browser blocks saving
+  const file = `${safeFile(cardName())} - for approval.json`, n = erpItems().length;
+  download(file, fileJson(), 'application/json');
+  const body = [`Hi ${m.name.split(' ')[0]},`, '',
+    `Please review the attached rate card for ${cardName()} (customer number ${state.customer.number.trim()}). ${n} item${n === 1 ? ' is' : 's are'} at special prices.`, '',
+    `To review it, open the Rate Card Builder (${APP_URL}), choose Open > Open from a file, select the attached file, then click Review & approve.`, '',
+    state.rep.name.trim()].join('\n');
+  setTimeout(() => mailto(m.email, `Rate card for approval: ${cardName()} (${state.customer.number.trim()})`, body), 400);
+  $('#dlgSubmit').close();
+  renderFlow();
+  toast(`Submitted to ${m.name}. Attach “${file}” from your Downloads folder to the email and send it.`);
+}
+
+function openReview() {
+  const st = approvalStatus(), a = state.approval || {}, items = erpItems();
+  const box = {
+    draft: '<div class="warn">This rate card hasn’t been submitted for approval yet.</div>',
+    submitted: '',
+    approved: `<div class="ok-box">Approved by <b>${esc(a.by)}</b> on ${esc(whenText(a.at))}.${a.note ? ` Note: ${esc(a.note)}` : ''}</div>`,
+    changed: `<div class="warn">This rate card changed after it was ${a.status === 'approved' ? 'approved' : 'submitted'}. The rep needs to submit it again.</div>`,
+    declined: `<div class="warn">${esc(a.by || 'The sales manager')} asked for changes on ${esc(whenText(a.at))}: ${esc(a.note || '')}</div>`,
+  }[st];
+  $('#rvState').innerHTML = box;
+  const r = state.rep, meta = [
+    ['Customer', cardName()], ['Customer number', state.customer.number.trim() || '—'],
+    ['Prepared by', [r.name, r.branch && r.branch.replace(/\s+branch$/i, '') + ' Branch'].filter(Boolean).join(', ') || '—'],
+    ['Submitted', a.submittedAt ? `${whenText(a.submittedAt)} to ${a.toName}` : '—'],
+    ['Special pricing', `${items.length} item${items.length === 1 ? '' : 's'}, ${erpLineCount(items)} CSV lines`],
+  ];
+  $('#rvMeta').innerHTML = meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+  const cell = (x, i) => !x.cols.includes(i) ? '<td class="muted">—</td>' : `<td>${!x.r.custom && !sameRate(x.vals[i], x.r.rates[i]) && x.r.rates[i] != null ? `<s>${fmt(x.r.rates[i])}</s>` : ''}<b>${fmt(x.vals[i])}</b></td>`;
+  $('#rvList').innerHTML = items.length ? `<div class="rv-list"><table><tr><th>Item (Klass)</th>${COL_NAMES.map(n => `<th>${n}</th>`).join('')}</tr>
+    ${items.map(x => `<tr><td>${esc(itemName(x))}${x.r.custom ? ' <span class="muted">(custom)</span>' : ''}<div class="muted small">${esc(x.klass.join(', ') || 'no Klass code')}</div></td>${[0, 1, 2].map(i => cell(x, i)).join('')}</tr>`).join('')}</table></div>`
+    : '<p class="small muted">Every item on this rate card is at list price.</p>';
+  $('#rvForm').style.display = st === 'submitted' ? '' : 'none';
+  $('#rvWho').innerHTML = managers().map(m => `<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('');
+  if (findManager(a.to)) $('#rvWho').value = a.to;
+  $('#rvPin').value = ''; $('#rvNote').value = '';
+  const F = (act, label, cls = '') => `<button class="btn ${cls}" data-rv="${act}">${label}</button>`;
+  $('#rvFoot').innerHTML = st === 'submitted' ? F('close', 'Cancel') + F('decline', 'Ask for changes') + F('approve', 'Approve', 'primary')
+    : st === 'approved' ? F('close', 'Close') + F('torep', 'Email approved file to rep') + F('csv', 'Export CSV for ERP', 'primary')
+    : F('close', 'Close', 'primary');
+  if (!$('#dlgReview').open) $('#dlgReview').showModal();
+}
+function doApprove() {
+  const m = findManager($('#rvWho').value);
+  if (!m || pinHash($('#rvPin').value) !== m.pinHash) { toast('That PIN isn’t correct.', 'error'); $('#rvPin').select(); return; }
+  if (approvalStatus() !== 'submitted') return;
+  const a = Object.assign({}, state.approval, { status: 'approved', by: m.name, byEmail: m.email, at: new Date().toISOString(), note: $('#rvNote').value.trim() });
+  a.code = approvalCode(a, m);
+  state.approval = a;
+  saveToLibrary(true); renderFlow(); openReview();
+  toast('Approved. Email the approved file back to the rep, or export the CSV now.');
+}
+function doDecline() {
+  const note = $('#rvNote').value.trim();
+  if (!note) { toast('Add a note telling the rep what to change.', 'error'); $('#rvNote').focus(); return; }
+  const m = findManager($('#rvWho').value);
+  state.approval = Object.assign({}, state.approval, { status: 'declined', by: m ? m.name : '', byEmail: m ? m.email : '', at: new Date().toISOString(), note, code: null });
+  saveToLibrary(true); renderFlow(); $('#dlgReview').close();
+  sendToRep();
+}
+function sendToRep() {
+  const a = state.approval; if (!a) return;
+  const ok = approvalStatus() === 'approved', first = state.rep.name.trim().split(' ')[0];
+  const file = `${safeFile(cardName())} - ${ok ? 'approved' : 'needs changes'}.json`;
+  download(file, fileJson(), 'application/json');
+  const open = `Open the attached file in the Rate Card Builder (${APP_URL}) with Open > Open from a file`;
+  const body = ok
+    ? [`Hi ${first},`, '', `I approved the rate card for ${cardName()}.${a.note ? ' ' + a.note : ''}`, '', `${open}, then click Export CSV for ERP.`, '', a.by].join('\n')
+    : [`Hi ${first},`, '', `The rate card for ${cardName()} needs changes before I can approve it:`, '', a.note, '', `${open}, make the changes and submit it again.`, '', a.by].join('\n');
+  setTimeout(() => mailto(state.rep.email, `Rate card ${ok ? 'approved' : 'needs changes'}: ${cardName()}`, body), 400);
+  toast(`Attach “${file}” from your Downloads folder to the email and send it.`);
+}
+
+const ERP_HEAD = ['customer_identifier', 'klass_identifier', 'location_identifier', 'customer_identifier_fk', 'frequency', 'amount', 'quantity', 'payer_type', 'type'];
+function erpCsv() {
+  const items = erpItems(), num = state.customer.number.trim(), lines = [];
+  for (const x of items) for (const k of x.klass) for (const i of x.cols) lines.push([k, ERP_FREQ[i], x.vals[i]]);
+  const w = Math.max(4, String(lines.length).length);
+  const rows = lines.map(([k, f, amt], n) => [`RP-${String(n + 1).padStart(w, '0')}`, k, '', num, f, amt, 1, 'customer', 'fixed']);
+  return { items, lines, skipped: items.filter(x => !x.klass.length), text: [ERP_HEAD, ...rows].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n' };
+}
+function exportErpCsv() {
+  if (sandboxStop('Export to CSV for MOAB')) return;
+  if (APPROVAL_ON && approvalStatus() !== 'approved') { toast('A sales manager needs to approve this rate card before the CSV can be exported.', 'error'); return; }
+  if (!state.customer.number.trim()) {
+    selectTab('customer'); $('#f-number').focus();
+    toast('Enter the Customer number first. It goes on every line of the MOAB file.', 'error'); return;
+  }
+  const { items, lines, skipped, text } = erpCsv();
+  const customNoKlass = skipped.filter(x => x.r.custom);
+  if (customNoKlass.length) {
+    for (const x of customNoKlass) rowEls.get(x.r.id)?.querySelector('.e-klass-in')?.classList.add('missing');
+    locate(customNoKlass[0].r.id);
+    toast(`Add a Klass code to ${customNoKlass.length === 1 ? 'this custom item' : `these ${customNoKlass.length} custom items`} first: ${customNoKlass.map(itemName).join('; ')}.`, 'error'); return;
+  }
+  if (!lines.length) { toast('No prices differ from the list price, so there is nothing to export.', 'error'); return; }
+  download(`${safeFile(state.customer.number.trim())} ${safeFile(cardName())} - rental_pricings.csv`, text, 'text/csv;charset=utf-8');
+  toast(`Downloaded the MOAB file: ${lines.length} lines for ${items.length - skipped.length} items.${skipped.length ? ` ${skipped.length} item${skipped.length === 1 ? '' : 's'} without a Klass code ${skipped.length === 1 ? 'was' : 'were'} left out.` : ''}`, skipped.length ? 'error' : undefined);
+}
+
+/* ---------------- admin: rates spreadsheet ---------------- */
+const CSV_HEAD = ['Section', 'Type', 'ID', 'Description', 'Daily', 'Weekly', '4 Weeks', 'Green Leaf', 'Indent', 'Cat Logo', 'Image', 'Klass'];
+function csvCell(v) { const s = String(v ?? ''); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+function exportCsv() {
+  const lines = [CSV_HEAD];
+  for (const s of DATA.sections) {
+    lines.push([s.name, 'SECTION', s.id, '', '', '', '', '', '', '', '', '']);
+    for (const r of s.rows) lines.push([s.name, r.type.toUpperCase(), r.id, r.text, ...(r.type === 'item' ? r.rates.map(v => v ?? '') : ['', '', '']), r.green ? 'Y' : '', r.indent ? 'Y' : '', r.logo ? 'Y' : '', r.image || '', klassOf(r).join(', ')]);
+  }
+  download(`Battlefield rates ${DATA.meta.version}.csv`, '﻿' + lines.map(l => l.map(csvCell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+function parseCsv(text) {
+  const first = text.split(/\r?\n/, 1)[0];
+  const delim = first.split(';').length > first.split(',').length ? ';' : ',';
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(f); f = ''; }
+    else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+    else if (c !== '\r') f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+function importCsv(text) {
+  const rows = parseCsv(text.replace(/^﻿/, ''));
+  const head = rows.shift().map(h => h.trim().toLowerCase());
+  const col = name => head.indexOf(name.toLowerCase());
+  const need = ['Type', 'Description', 'Daily', 'Weekly', '4 Weeks'];
+  const missing = need.filter(n => col(n) < 0);
+  if (missing.length) throw new Error(`The spreadsheet is missing these columns: ${missing.join(', ')}.`);
+  const get = (r, n) => (col(n) >= 0 ? (r[col(n)] ?? '').trim() : '');
+  const yes = v => /^(y|yes|true|1|x)$/i.test(v);
+  const sections = [], errors = [], seen = new Set();
+  let sec = null, n = 0;
+  const slug = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
+  rows.forEach((r, i) => {
+    const line = i + 2, type = get(r, 'Type').toUpperCase();
+    if (type === 'SECTION') {
+      const name = get(r, 'Section') || get(r, 'Description');
+      let id = get(r, 'ID') || slug(name); while (seen.has(id)) id += '-2';
+      seen.add(id); sec = { id, name, rows: [] }; sections.push(sec); return;
+    }
+    if (!sec) { errors.push(`Row ${line}: add a SECTION row before this row.`); return; }
+    if (!['SUB', 'GROUP', 'ITEM', 'NOTE', 'TEXT', 'IMAGE'].includes(type)) { errors.push(`Row ${line}: Type “${get(r, 'Type')}” isn’t recognised.`); return; }
+    // A row whose Section column names another section (e.g. added at the bottom of the sheet) goes to the end of that section.
+    const named = get(r, 'Section').toLowerCase();
+    const target = named && named !== sec.name.toLowerCase() ? sections.find(s => s.name.toLowerCase() === named) || sec : sec;
+    let id = get(r, 'ID');
+    if (!id || seen.has(id)) { do { id = `${target.id}-n${++n}`; } while (seen.has(id)); }
+    seen.add(id);
+    const row = { type: type.toLowerCase(), id, text: get(r, 'Description') };
+    if (!row.text && type !== 'IMAGE') errors.push(`Row ${line}: Description is empty.`);
+    if (type === 'ITEM') {
+      row.rates = ['Daily', 'Weekly', '4 Weeks'].map(c => {
+        const raw = get(r, c); if (/inquire/i.test(raw)) return null;
+        const v = parseRate(raw); if (v === undefined) { errors.push(`Row ${line}: “${raw}” in ${c} isn’t a number.`); return null; } return v;
+      });
+      const klass = klassOf({ klass: get(r, 'Klass') });
+      if (klass.length) row.klass = klass;
+      else if (col('Klass') < 0) { const old = ROW_INDEX.get(id)?.row; if (old && old.klass) row.klass = old.klass; } // older spreadsheets without the column keep their codes
+      if (yes(get(r, 'Green Leaf'))) row.green = true;
+      if (yes(get(r, 'Indent'))) row.indent = true;
+    }
+    if ((type === 'SUB' || type === 'GROUP') && yes(get(r, 'Cat Logo'))) row.logo = 'cat';
+    if (type === 'IMAGE') { row.image = get(r, 'Image'); if (!ASSETS[row.image]) errors.push(`Row ${line}: Image must be one of: heaters, hvac.`); }
+    target.rows.push(row);
+  });
+  if (!sections.length) errors.push('No SECTION rows were found.');
+  return { sections, errors };
+}
+function diffSummary(oldSecs, newSecs) {
+  const idx = secs => { const m = new Map(); for (const s of secs) for (const r of s.rows) m.set(r.id, r); return m; };
+  const a = idx(oldSecs), b = idx(newSecs);
+  let price = 0, added = 0, removed = 0, text = 0;
+  for (const [id, r] of b) { const o = a.get(id); if (!o) { added++; continue; } if (o.text !== r.text) text++; if (r.rates && o.rates && r.rates.some((v, i) => !sameRate(v, o.rates[i]))) price++; }
+  for (const id of a.keys()) if (!b.has(id)) removed++;
+  const items = newSecs.reduce((n, s) => n + s.rows.filter(r => r.type === 'item').length, 0);
+  return `${newSecs.length} sections, ${items} items.\nPrice changes: ${price}   New rows: ${added}   Removed rows: ${removed}   Wording changes: ${text}`;
+}
+function openAdmin() {
+  const M = DATA.meta;
+  $('#admCurrent').innerHTML = `Rates version <b>${esc(M.version)}</b> · ${DATA.sections.length} sections · ${counts().items} items.`;
+  $('#admTitle').value = M.title; $('#admFooter').value = M.footer; $('#admVersion').value = M.version; $('#admYear').value = M.year;
+  $('#admTermsL').value = M.termsLeft.join('\n'); $('#admTermsR').value = M.termsRight.map(t => t.replace(/^\t/, '  ')).join('\n');
+  $('#admManagers').value = managers().map(m => `${m.name}, ${m.email}`).join('\n');
+  $('#admOut').style.display = 'none';
+  $('#dlgAdmin').showModal();
+}
+function applyAdminText() {
+  const M = DATA.meta;
+  M.title = $('#admTitle').value.trim() || M.title;
+  M.footer = $('#admFooter').value.trim() || M.footer;
+  M.version = $('#admVersion').value.trim() || M.version;
+  M.year = Number($('#admYear').value) || M.year;
+  M.termsLeft = $('#admTermsL').value.split('\n').filter(l => l.trim());
+  M.termsRight = $('#admTermsR').value.split('\n').filter(l => l.trim()).map(l => l.replace(/^\s{2,}/, '\t'));
+  $('#appSub').textContent = `${M.year} rates · version ${M.version}`;
+  scheduleRender();
+  return applyManagers();
+}
+// "Name, email, PIN" per line; a line without a PIN keeps that manager's current PIN.
+function applyManagers() {
+  const list = [], errors = [];
+  $('#admManagers').value.split('\n').map(l => l.trim()).filter(Boolean).forEach((l, i) => {
+    const [name, email, pin] = l.split(',').map(s => (s || '').trim());
+    const old = findManager(email);
+    if (!name || !/^[^@\s]+@[^@\s]+$/.test(email || '')) errors.push(`Line ${i + 1}: write it as Name, email, PIN.`);
+    else if (!pin && !old) errors.push(`Line ${i + 1}: ${name} needs a PIN.`);
+    else if (pin && pin.length < 4) errors.push(`Line ${i + 1}: use a PIN of at least 4 characters.`);
+    else list.push({ name, email, pinHash: pin ? pinHash(pin) : old.pinHash });
+  });
+  if (errors.length) { toast(errors.join(' '), 'error'); return false; }
+  DATA.meta.managers = list;
+  $('#admManagers').value = list.map(m => `${m.name}, ${m.email}`).join('\n');
+  renderFlow();
+  return true;
+}
+function updatedAppHtml() {
+  if (!PAGE_SOURCE) return null;
+  const json = JSON.stringify(DATA).replace(/</g, '\\u003c');
+  const re = /(<script id="rate-data" type="application\/json">)[\s\S]*?(<\/script>)/;
+  return re.test(PAGE_SOURCE) ? PAGE_SOURCE.replace(re, (m, a, b) => a + json + b) : null;
+}
+function buildUpdatedApp() {
+  if (!applyAdminText()) return;
+  const out = updatedAppHtml();
+  if (!out) { toast('Could not build the updated app. Reload the page and try again.', 'error'); return; }
+  download(`Battlefield Rate Card Builder (${safeFile(DATA.meta.version)}).html`, out, 'text/html');
+  toast('Downloaded the updated app. Replace the copy on SharePoint with it.');
+}
+
+/* ---------------- tabs, zoom, wiring ---------------- */
+function selectTab(name) {
+  for (const t of $$('.tab')) t.setAttribute('aria-selected', t.dataset.tab === name);
+  for (const p of $$('.panel')) p.classList.toggle('active', p.id === 'tab-' + name);
+  store.set('tab', name);
+}
+let zoom = null;
+function fitZoom() { const w = $('#pvScroll').clientWidth - 48; return Math.max(0.35, Math.min(1.25, w / 816)); }
+function setZoom(z) { zoom = z; const v = z ?? fitZoom(); $('#pages').style.setProperty('--zoom', v.toFixed(3)); $('#zVal').textContent = Math.round(v * 100) + '%'; }
+
+function init() {
+  indexData();
+  if (SANDBOXED) {
+    const bar = document.createElement('div');
+    bar.className = 'sandbox-bar';
+    bar.innerHTML = `<b>This page is open inside SharePoint's viewer, which blocks Publish PDF, the MOAB export and saving.</b> Open the Rate Card Builder at <span class="u">${esc(APP_URL)}</span> instead.`;
+    $('.topbar').after(bar);
+  }
+  $('#brandLogo').src = ASSETS.logo;
+  $('#appSub').textContent = `${DATA.meta.year} rates · version ${DATA.meta.version}`;
+  $('#helpVersion').textContent = `Rates version ${DATA.meta.version}.`;
+  const draft = store.get('draft', null);
+  state = draft ? normalise(draft) : blankState();
+  dirty = draft ? !!store.get('dirty', false) : false;
+  bindForm(); renderColChecks(); renderEditor(); renderPricing(); updateDocBar(); renderFlow();
+  selectTab(draft ? store.get('tab', 'equipment') : 'customer');
+  setZoom(null);
+  renderCard();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleRender);
+
+  $('.tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t.dataset.tab); });
+  const list = $('#secList');
+  list.addEventListener('click', onEditorClick);
+  list.addEventListener('change', onEditorChange);
+  list.addEventListener('input', onEditorInput);
+  list.addEventListener('focusout', onEditorBlur);
+  list.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('.rate, .e-desc-in')) e.target.blur(); });
+  initDrag(list);
+  $('#btnResetOrder').addEventListener('click', () => { state.order = []; renderEditor(); changed({ noEditor: true }); toast('Categories are back in the standard order.'); });
+  $('#search').addEventListener('input', applySearch);
+  $('#btnExpand').addEventListener('click', () => {
+    const allOpen = DATA.sections.every(s => openSecs.has(s.id));
+    DATA.sections.forEach(s => (allOpen ? openSecs.delete(s.id) : openSecs.add(s.id)));
+    $('#btnExpand').textContent = allOpen ? 'Expand all' : 'Collapse all';
+    applySearch();
+  });
+  $('#btnAllOn').addEventListener('click', () => { state.hiddenSections = {}; state.hidden = {}; changed(); });
+  $('#btnAllOff').addEventListener('click', () => { DATA.sections.forEach(s => (state.hiddenSections[s.id] = true)); changed(); });
+  $('#tab-customer').addEventListener('input', onFormInput);
+  $('#colChecks').addEventListener('change', e => {
+    const i = +e.target.dataset.col; state.cols[i] = e.target.checked;
+    if (!state.cols.some(Boolean)) { state.cols[i] = true; e.target.checked = true; toast('Keep at least one rate column.'); return; }
+    renderEditor(); changed({ noEditor: true });
+  });
+  $('#btnAdj').addEventListener('click', applyAdjust);
+  $('#adjScope').addEventListener('change', loadRuleIntoForm);
+  $$('#adj0, #adj1, #adj2').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') applyAdjust(); }));
+  $('#adjList').addEventListener('click', e => {
+    const ed = e.target.closest('[data-rule-edit]'), del = e.target.closest('[data-rule-del]');
+    if (ed) { $('#adjScope').value = ed.dataset.ruleEdit; loadRuleIntoForm(); $('#adj0').focus(); }
+    if (del) { state.adjust = state.adjust.filter(a => a.scope !== del.dataset.ruleDel); changed(); if ($('#adjScope').value === del.dataset.ruleDel) loadRuleIntoForm(); }
+  });
+  $('#chgWrap').addEventListener('click', e => {
+    const b = e.target.closest('[data-reset]'); if (b) { delete state.overrides[b.dataset.reset]; changed(); }
+    if (e.target.id === 'btnResetAll') confirmBox('Reset all typed prices?', 'Every price typed by hand on this rate card is removed. Percentage adjustments stay as they are.', 'Reset all').then(ok => { if (ok) { state.overrides = {}; changed(); } });
+  });
+  // preview interactions
+  $('#pages').addEventListener('click', e => {
+    const mv = e.target.closest('[data-mv]');
+    if (mv) {
+      // move past the neighbouring category that is on the card
+      const shown = orderedSections().filter(s => visibleRows(s).some(x => isContent(x.r))).map(s => s.id);
+      const k = shown.indexOf(mv.dataset.id), other = shown[k + (mv.dataset.mv === 'up' ? -1 : 1)];
+      if (other) { const ids = orderedSections().map(s => s.id); moveSection(mv.dataset.id, ids.indexOf(other)); renderEditor(); changed({ noEditor: true }); }
+      return;
+    }
+    const rm = e.target.closest('.rm');
+    if (rm) {
+      const id = rm.dataset.id, kind = rm.dataset.rm;
+      if (kind === 'sec') state.hiddenSections[id] = true;
+      else if (kind === 'row') state.hidden[id] = true;
+      else { const f = findRow(id); if (f) setRange(f.sec, structure(f.sec).ranges.get(id), false); }
+      changed(); return;
+    }
+    const blk = e.target.closest('.blk[data-id]');
+    if (blk && !e.target.closest('a')) { e.preventDefault(); if (!blk.classList.contains('b-sec')) locate(blk.dataset.id); else { openSecs.add(blk.dataset.id); selectTab('equipment'); applySearch(); $(`.sec[data-sec="${CSS.escape(blk.dataset.id)}"]`).scrollIntoView({ behavior: 'smooth' }); } }
+    else if (e.target.closest('a')) e.preventDefault();
+  });
+  $('#zIn').addEventListener('click', () => setZoom(Math.min(2, (zoom ?? fitZoom()) + 0.1)));
+  $('#zOut').addEventListener('click', () => setZoom(Math.max(0.3, (zoom ?? fitZoom()) - 0.1)));
+  $('#zFit').addEventListener('click', () => setZoom(null));
+  window.addEventListener('resize', () => { if (zoom == null) setZoom(null); });
+
+  // top bar
+  $('#btnSave').addEventListener('click', () => saveToLibrary());
+  $('#btnPublish').addEventListener('click', openPublish);
+  $('#pubGo').addEventListener('click', doPublish);
+  // approval & ERP export
+  $('#flowBtns').addEventListener('click', e => {
+    const b = e.target.closest('[data-flow]'); if (!b) return;
+    if (b.dataset.flow === 'submit') openSubmit();
+    if (b.dataset.flow === 'review') openReview();
+    if (b.dataset.flow === 'torep') sendToRep();
+  });
+  $('#btnCsv').addEventListener('click', exportErpCsv);
+  $('#subGo').addEventListener('click', doSubmit);
+  $('#rvFoot').addEventListener('click', e => {
+    const b = e.target.closest('[data-rv]'); if (!b) return;
+    const a = b.dataset.rv;
+    if (a === 'close') $('#dlgReview').close();
+    if (a === 'approve') doApprove();
+    if (a === 'decline') doDecline();
+    if (a === 'torep') sendToRep();
+    if (a === 'csv') exportErpCsv();
+  });
+  $('#rvPin').addEventListener('keydown', e => { if (e.key === 'Enter') doApprove(); });
+  $('#btnNew').addEventListener('click', () => { $('#newWarn').innerHTML = dirty ? `<div class="warn">“${esc(cardName())}” has unsaved changes. Save it first if you want to keep them.</div>` : ''; $('#dlgNew').showModal(); });
+  $$('[data-new]').forEach(b => b.addEventListener('click', () => {
+    $('#dlgNew').close();
+    openSecs.clear(); $('#search').value = '';
+    loadState(blankState(b.dataset.new === 'all'));
+    selectTab(b.dataset.new === 'all' ? 'customer' : 'equipment');
+    toast(b.dataset.new === 'all' ? 'New rate card with all equipment.' : 'New rate card. Tick the sections you need.');
+  }));
+  $('#btnOpen').addEventListener('click', () => { renderLibrary(); $('#dlgOpen').showModal(); });
+  $('#libList').addEventListener('click', async e => {
+    const o = e.target.closest('[data-lib-open]'), d = e.target.closest('[data-lib-del]');
+    if (o) { const card = library()[o.dataset.libOpen]; if (!card) return; if (!(await guardUnsaved())) return; $('#dlgOpen').close(); openSecs.clear(); loadState(card, `Opened “${card.customer?.company || 'Untitled rate card'}”.`); }
+    if (d) {
+      const lib = library(), card = lib[d.dataset.libDel];
+      if (!(await confirmBox('Delete saved rate card?', `“${card?.customer?.company || 'Untitled rate card'}” will be removed from this computer. PDFs you already sent are not affected.`, 'Delete'))) return;
+      delete lib[d.dataset.libDel]; store.set('cards', lib); renderLibrary();
+    }
+  });
+  $('#openFromFile').addEventListener('click', () => $('#fileOpen').click());
+  $('#fileOpen').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const s = JSON.parse(await f.text());
+      if (!s || typeof s !== 'object' || !('hidden' in s) || !('customer' in s)) throw new Error();
+      if (!(await guardUnsaved())) return;
+      $('#dlgOpen').open && $('#dlgOpen').close();
+      openSecs.clear(); loadState(s, `Opened ${f.name}.`);
+    } catch (err) { toast('That file isn’t a rate card saved from this app.', 'error'); }
+  });
+  const menu = $('#menu');
+  $('#btnMenu').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+  document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) menu.classList.remove('open'); });
+  menu.addEventListener('click', e => {
+    const b = e.target.closest('[data-menu]'); if (!b) return; menu.classList.remove('open');
+    const m = b.dataset.menu;
+    if (m === 'saveFile') saveToFile();
+    if (m === 'openFile') $('#fileOpen').click();
+    if (m === 'submit') openSubmit();
+    if (m === 'review') openReview();
+    if (m === 'duplicate') { state = normalise(Object.assign(clone(state), { id: uid(), savedAt: null, approval: null }));state.customer.company = state.customer.company ? state.customer.company + ' (copy)' : ''; bindForm(); changed(); toast('Duplicated. Change the customer details and save.'); selectTab('customer'); }
+    if (m === 'help') $('#dlgHelp').showModal();
+    if (m === 'admin') openAdmin();
+  });
+  for (const d of $$('dialog')) d.addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === d) d.close(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveToLibrary(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p' && !titleBeforePrint) { e.preventDefault(); if (!$('#dlgPublish').open) openPublish(); }
+  });
+  // admin
+  $('#admCsvOut').addEventListener('click', exportCsv);
+  $('#admCsvIn').addEventListener('click', () => $('#fileCsv').click());
+  $('#fileCsv').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const out = $('#admOut'); out.style.display = 'block'; out.classList.remove('err');
+    try {
+      const buf = await f.arrayBuffer();
+      let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (x) { text = new TextDecoder('windows-1252').decode(buf); }
+      const { sections, errors } = importCsv(text);
+      if (errors.length) { out.classList.add('err'); out.textContent = `Nothing was changed. Please fix these and upload again:\n• ${errors.slice(0, 30).join('\n• ')}${errors.length > 30 ? `\n…and ${errors.length - 30} more` : ''}`; return; }
+      const summary = diffSummary(DATA.sections, sections);
+      DATA.sections = sections; indexData();
+      renderEditor(); renderPricing(); scheduleRender();
+      out.textContent = `Loaded ${f.name}.\n${summary}\nCheck the preview, then download the updated app (step 4).`;
+    } catch (err) { out.classList.add('err'); out.textContent = err.message || 'Could not read that file.'; }
+  });
+  $('#admApplyText').addEventListener('click', () => { if (applyAdminText()) toast('Text updated in the preview.'); });
+  $('#admBuild').addEventListener('click', buildUpdatedApp);
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
