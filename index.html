@@ -19,6 +19,7 @@ html, body { height: 100%; margin: 0; }
 body { font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); display: flex; flex-direction: column; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+[hidden] { display: none !important; }
 
 /* ---------- top bar ---------- */
 .topbar { flex: none; height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 18px; background: #fff; border-bottom: 1px solid var(--line); }
@@ -342,6 +343,7 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
     <button class="btn ghost" id="btnNew" title="Start a new rate card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl-txt">New</span></button>
     <button class="btn ghost" id="btnOpen" title="Open a saved rate card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl-txt">Open</span></button>
     <button class="btn" id="btnSave" title="Save (Ctrl+S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8M7 21v-7h10v7"/></svg><span class="lbl-txt">Save</span></button>
+    <button class="btn" id="btnCsv" title="Download the customer's special pricing as a CSV for upload into MOAB"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl-txt">Export to CSV for MOAB</span></button>
     <button class="btn primary" id="btnPublish" title="Create the PDF for your customer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3 3 3-3"/></svg><span class="lbl-txt">Publish PDF</span></button>
     <div class="menu-wrap">
       <button class="btn icon ghost" id="btnMenu" aria-label="More" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
@@ -349,9 +351,9 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
         <button data-menu="saveFile">Save a copy to a file…</button>
         <button data-menu="openFile">Open a rate card file…</button>
         <button data-menu="duplicate">Duplicate this rate card</button>
-        <hr>
-        <button data-menu="submit">Submit for approval…</button>
-        <button data-menu="review">Review &amp; approve (sales manager)…</button>
+        <hr data-approval hidden>
+        <button data-menu="submit" data-approval hidden>Submit for approval…</button>
+        <button data-menu="review" data-approval hidden>Review &amp; approve (sales manager)…</button>
         <hr>
         <button data-menu="help">How to use</button>
         <button data-menu="admin">Update rates (admin)…</button>
@@ -359,11 +361,10 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
     </div>
   </div>
 </header>
-<div class="flowbar" id="flowbar">
+<div class="flowbar" id="flowbar" hidden>
   <span class="pill" id="flowPill"></span>
   <span class="msg" id="flowMsg"></span>
   <span class="btns" id="flowBtns"></span>
-  <button class="btn sm" id="btnCsv" title="Download the ERP pricing file. Available after a sales manager approves this rate card."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export CSV for ERP</button>
 </div>
 
 <main>
@@ -379,7 +380,7 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
         <fieldset class="fs">
           <legend>Prepared for</legend>
           <div class="field"><label for="f-company">Customer / company name</label><input id="f-company" data-bind="customer.company" placeholder="e.g. Greenway Landscaping Ltd." autocomplete="off"></div>
-          <div class="field"><label for="f-number">Customer number <span class="muted" style="font-weight:400">(needed to submit for approval; not shown on the PDF)</span></label><input id="f-number" data-bind="customer.number" placeholder="e.g. 104522" autocomplete="off"></div>
+          <div class="field"><label for="f-number">Customer number <span class="muted" style="font-weight:400">(needed for the MOAB export; not shown on the PDF)</span></label><input id="f-number" data-bind="customer.number" placeholder="e.g. 104522" autocomplete="off"></div>
           <div class="field"><label for="f-contact">Contact name</label><input id="f-contact" data-bind="customer.contact" placeholder="e.g. Jordan Lee" autocomplete="off"></div>
         </fieldset>
         <fieldset class="fs">
@@ -557,7 +558,7 @@ dialog::backdrop { background: rgba(20,20,24,.45); }
       <li><b>Pricing:</b> choose which rate columns to show, and raise or discount Daily, Weekly and 4 Weeks rates by different percentages for all equipment, a category or a product group.</li>
       <li><b>Save</b> keeps the rate card on this computer so you can reopen it later. <b>Save a copy to a file</b> (in the ••• menu) lets you keep it in OneDrive or send it to a colleague.</li>
       <li><b>Publish PDF</b> creates the PDF to send to your customer.</li>
-      <li><b>Submit for approval</b> (in the bar under the buttons) sends the rate card to your sales manager. Enter the <b>Customer number</b> first, and a Klass code for any custom item. When the manager approves it, <b>Export CSV for ERP</b> downloads the customer's special pricing for upload into the ERP.</li>
+      <li><b>Export to CSV for MOAB</b> downloads the customer's special pricing for upload into MOAB: every item whose price differs from the list price, plus your custom items. Enter the <b>Customer number</b> on the Customer tab first, and a Klass code for each custom item.</li>
     </ol>
     <p class="small muted" id="helpVersion"></p>
   </div>
@@ -620,6 +621,8 @@ const PAGE_CONTENT_H = 697; // pt between top margin and footer
 const LABEL_DEFAULTS = { columns: ['DAILY', 'WEEKLY', '4 WEEKS'], inquire: 'PLEASE INQUIRE', page: 'Page {n} of {t}', preparedFor: 'Prepared for', preparedBy: 'Prepared by', date: 'Date', validUntil: 'Rates valid until', notes: 'Notes', attn: 'Attn:' };
 const COL_NAMES = ['Daily', 'Weekly', '4 Weeks'];
 const ERP_FREQ = ['daily', 'weekly', 'twenty_eight_days'];
+// Sales-manager approval before the MOAB export. Switched off for now (Nov 2026); set to true to bring it back.
+const APPROVAL_ON = false;
 const APP_URL = 'https://civilian011.github.io/battlefield-rate-card/';
 
 /* ---------------- utilities ---------------- */
@@ -1459,12 +1462,15 @@ const erpLineCount = items => items.reduce((n, x) => n + x.klass.length * x.cols
 const itemName = x => (x.r.text.trim() || 'Untitled custom item');
 
 function renderFlow() {
+  $('#flowbar').hidden = !APPROVAL_ON;
+  $$('[data-approval]').forEach(el => { el.hidden = !APPROVAL_ON; });
+  if (!APPROVAL_ON) { $('#btnCsv').disabled = false; return; }
   const st = approvalStatus(), a = state.approval || {};
   const pill = { draft: 'Draft', submitted: 'Waiting for approval', approved: 'Approved', changed: 'Changed', declined: 'Needs changes' }[st];
   const msg = {
     draft: 'When the rate card is ready, submit it to your sales manager for approval.',
     submitted: `Submitted to ${a.toName} on ${whenText(a.submittedAt)}.`,
-    approved: `Approved by ${a.by} on ${whenText(a.at)}. The CSV for the ERP can now be exported.`,
+    approved: `Approved by ${a.by} on ${whenText(a.at)}. The CSV for MOAB can now be exported.`,
     changed: `Changed since it was ${a.status === 'approved' ? 'approved' : 'submitted'}. Submit it again for approval.`,
     declined: `${a.by || 'Your sales manager'} asked for changes: ${a.note || ''}`,
   }[st];
@@ -1476,7 +1482,6 @@ function renderFlow() {
     : st === 'declined' ? B('review', 'View', 'ghost') + B('submit', 'Submit again')
     : B('submit', st === 'changed' ? 'Submit again' : 'Submit for approval');
   $('#btnCsv').disabled = st !== 'approved';
-  $('#btnCsv').classList.toggle('primary', st === 'approved');
 }
 
 function openSubmit() {
@@ -1587,11 +1592,21 @@ function erpCsv() {
   return { items, lines, skipped: items.filter(x => !x.klass.length), text: [ERP_HEAD, ...rows].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n' };
 }
 function exportErpCsv() {
-  if (approvalStatus() !== 'approved') { toast('A sales manager needs to approve this rate card before the CSV can be exported.', 'error'); return; }
+  if (APPROVAL_ON && approvalStatus() !== 'approved') { toast('A sales manager needs to approve this rate card before the CSV can be exported.', 'error'); return; }
+  if (!state.customer.number.trim()) {
+    selectTab('customer'); $('#f-number').focus();
+    toast('Enter the Customer number first. It goes on every line of the MOAB file.', 'error'); return;
+  }
   const { items, lines, skipped, text } = erpCsv();
+  const customNoKlass = skipped.filter(x => x.r.custom);
+  if (customNoKlass.length) {
+    for (const x of customNoKlass) rowEls.get(x.r.id)?.querySelector('.e-klass-in')?.classList.add('missing');
+    locate(customNoKlass[0].r.id);
+    toast(`Add a Klass code to ${customNoKlass.length === 1 ? 'this custom item' : `these ${customNoKlass.length} custom items`} first: ${customNoKlass.map(itemName).join('; ')}.`, 'error'); return;
+  }
   if (!lines.length) { toast('No prices differ from the list price, so there is nothing to export.', 'error'); return; }
   download(`${safeFile(state.customer.number.trim())} ${safeFile(cardName())} - rental_pricings.csv`, text, 'text/csv;charset=utf-8');
-  toast(`Downloaded the ERP file: ${lines.length} lines for ${items.length - skipped.length} items.${skipped.length ? ` ${skipped.length} item${skipped.length === 1 ? '' : 's'} without a Klass code ${skipped.length === 1 ? 'was' : 'were'} left out.` : ''}`, skipped.length ? 'error' : undefined);
+  toast(`Downloaded the MOAB file: ${lines.length} lines for ${items.length - skipped.length} items.${skipped.length ? ` ${skipped.length} item${skipped.length === 1 ? '' : 's'} without a Klass code ${skipped.length === 1 ? 'was' : 'were'} left out.` : ''}`, skipped.length ? 'error' : undefined);
 }
 
 /* ---------------- admin: rates spreadsheet ---------------- */
