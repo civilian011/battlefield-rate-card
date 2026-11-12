@@ -20,6 +20,8 @@ body { font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 [hidden] { display: none !important; }
+.sandbox-bar { flex: none; padding: 9px 18px; background: #fff6e0; border-bottom: 1px solid #f0d48a; color: #6b4b00; font-size: 13px; }
+.sandbox-bar .u { font-weight: 700; user-select: all; }
 
 /* ---------- top bar ---------- */
 .topbar { flex: none; height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 18px; background: #fff; border-bottom: 1px solid var(--line); }
@@ -623,6 +625,13 @@ const COL_NAMES = ['Daily', 'Weekly', '4 Weeks'];
 const ERP_FREQ = ['daily', 'weekly', 'twenty_eight_days'];
 // Sales-manager approval before the MOAB export. Switched off for now (Nov 2026); set to true to bring it back.
 const APPROVAL_ON = false;
+// SharePoint's HTML viewer runs the page in a frame sandboxed to scripts only: printing, downloads and saving are silently blocked.
+const SANDBOXED = (() => { try { return window.self !== window.top && window.origin === 'null'; } catch (e) { return true; } })();
+function sandboxStop(what) {
+  if (!SANDBOXED) return false;
+  confirmBox(`${what} doesn't work in SharePoint's viewer`, `SharePoint opens this page in a locked-down frame that blocks printing, downloads and saving. Open the Rate Card Builder at ${APP_URL} instead. Ask your manager if you need the link.`, 'OK');
+  return true;
+}
 const APP_URL = 'https://civilian011.github.io/battlefield-rate-card/';
 
 /* ---------------- utilities ---------------- */
@@ -1404,6 +1413,7 @@ async function guardUnsaved() {
 
 /* ---------------- publish ---------------- */
 function openPublish() {
+  if (sandboxStop('Publish PDF')) return;
   const c = counts();
   if (!c.secs) { toast('Add some equipment before you publish.', 'error'); return; }
   const warn = [];
@@ -1592,6 +1602,7 @@ function erpCsv() {
   return { items, lines, skipped: items.filter(x => !x.klass.length), text: [ERP_HEAD, ...rows].map(l => l.map(csvCell).join(',')).join('\r\n') + '\r\n' };
 }
 function exportErpCsv() {
+  if (sandboxStop('Export to CSV for MOAB')) return;
   if (APPROVAL_ON && approvalStatus() !== 'approved') { toast('A sales manager needs to approve this rate card before the CSV can be exported.', 'error'); return; }
   if (!state.customer.number.trim()) {
     selectTab('customer'); $('#f-number').focus();
@@ -1755,6 +1766,12 @@ function setZoom(z) { zoom = z; const v = z ?? fitZoom(); $('#pages').style.setP
 
 function init() {
   indexData();
+  if (SANDBOXED) {
+    const bar = document.createElement('div');
+    bar.className = 'sandbox-bar';
+    bar.innerHTML = `<b>This page is open inside SharePoint's viewer, which blocks Publish PDF, the MOAB export and saving.</b> Open the Rate Card Builder at <span class="u">${esc(APP_URL)}</span> instead.`;
+    $('.topbar').after(bar);
+  }
   $('#brandLogo').src = ASSETS.logo;
   $('#appSub').textContent = `${DATA.meta.year} rates · version ${DATA.meta.version}`;
   $('#helpVersion').textContent = `Rates version ${DATA.meta.version}.`;
