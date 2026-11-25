@@ -1,0 +1,14 @@
+{
+  // Deploys this app to https://davidwhite.app/battlefield-rate-card/ on Cloudflare Workers.
+  // Cloudflare rebuilds and redeploys automatically on every push to main.
+  "name": "battlefield-rate-card",
+  "compatibility_date": "2026-11-25",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "davidwhite.app/battlefield-rate-card*", "zone_name": "davidwhite.app" }
+  ],
+  "assets": {
+    "directory": ".",
+    "base_path": "/battlefield-rate-card"
+  }
+}
